@@ -27,6 +27,7 @@ export async function createServer() {
   let config = await loadConfig(CONFIG_PATH);
   const debouncer = createDebouncer<HookEvent>(300);
   let lastEvent: HookEvent | null = null;
+  const recentEvents: HookEvent[] = [];
 
   function broadcast(message: WatchMessage) {
     const data = JSON.stringify(message);
@@ -69,6 +70,8 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     }
 
     lastEvent = event;
+    recentEvents.push(event);
+    if (recentEvents.length > 20) recentEvents.shift();
 
     // Static template for simple operations
     if (hasTemplate(event.tool_name, toolInput)) {
@@ -199,6 +202,13 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
 
     socket.on("close", () => { clients.delete(socket); });
   });
+
+  // Event log for monitoring
+  app.get("/events", async () => recentEvents.map((e) => ({
+    tool: e.tool_name,
+    input: e.tool_input,
+    time: e.timestamp,
+  })));
 
   app.get("/health", async () => ({ status: "ok" }));
 
