@@ -54,10 +54,16 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   function processEvent(event: HookEvent): string | null {
     const toolInput = event.tool_input as Record<string, unknown>;
 
+    // Only teach for code-related tools
+    const CODE_TOOLS = ["Write", "Edit", "MultiEdit", "Bash"];
+    if (!CODE_TOOLS.includes(event.tool_name)) {
+      return null;
+    }
+
     // Filter out teaching curl commands to prevent recursion
     if (event.tool_name === "Bash") {
       const cmd = String(toolInput.command ?? "");
-      if (cmd.includes("/teach") || cmd.includes("/exercise") || cmd.includes("/config") || cmd.includes("/status") || cmd.includes("/reset")) {
+      if (cmd.includes("/teach") || cmd.includes("/exercise") || cmd.includes("/config") || cmd.includes("/status") || cmd.includes("/reset") || cmd.includes("127.0.0.1:3579")) {
         return null;
       }
     }
