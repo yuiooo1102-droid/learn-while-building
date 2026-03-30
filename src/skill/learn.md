@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Start/stop real-time teaching mode. Use when user wants to learn programming concepts while Claude Code builds their project.
+description: Start/stop real-time teaching mode with interactive exercises. Use when user wants to learn programming concepts while Claude Code builds their project.
 ---
 
 # Learn While Building — Teaching Mode
@@ -49,7 +49,7 @@ You are activating the real-time teaching mode for a non-programmer user.
    ```
 
 5. Confirm to the user:
-   > 教学模式已启动！我在编码的同时，右侧面板会实时解释每一步操作。
+   > 教学模式已启动！我在编码的同时，右侧面板会实时解释每一步操作，还会不定时出练习题帮你巩固。
 
 ### /learn stop
 
@@ -59,3 +59,19 @@ You are activating the real-time teaching mode for a non-programmer user.
    curl -s -X POST http://127.0.0.1:3579/shutdown 2>/dev/null
    ```
 3. Confirm: 教学模式已关闭。
+
+### /learn try
+
+Manually trigger an exercise question:
+```bash
+curl -s -X POST http://127.0.0.1:3579/exercise/trigger
+```
+Then tell the user: 已在教学面板中生成一道练习题，请在右侧 pane 作答。
+
+### /learn model <model-id>
+
+Switch the LLM model used for teaching and exercises:
+```bash
+curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json' -d '{"model": "<model-id>"}'
+```
+Then confirm: 已切换模型为 <model-id>。
