@@ -52,22 +52,36 @@ export type ExerciseFeedback = {
 
 export type LwbConfig = {
   readonly model: string;
+  readonly depth: DepthLevel;
 };
 
-export type ClientMessage = {
-  readonly type: "answer";
-  readonly answer: string;
-};
+export type ClientMessage =
+  | { readonly type: "answer"; readonly answer: string }
+  | { readonly type: "confirm_reset"; readonly confirmed: boolean }
+  | { readonly type: "dismiss" };
 
 export type WatchMessage =
   | TeachingContent
   | Exercise
   | ExerciseFeedback
   | { readonly type: "status"; readonly message: string }
-  | { readonly type: "loading"; readonly title: string };
+  | { readonly type: "loading"; readonly title: string }
+  | { readonly type: "confirm_reset" }
+  | { readonly type: "knowledge_status"; readonly data: KnowledgeStore };
 
 export type SessionStep = {
   readonly toolName: string;
   readonly summary: string;
   readonly timestamp: string;
+};
+
+export type DepthLevel = 1 | 2 | 3;
+
+export type ArchiveEntry = {
+  readonly timestamp: string;
+  readonly project: string;
+  readonly concepts: ReadonlyArray<string>;
+  readonly title: string;
+  readonly explanation: string;
+  readonly reasoning: string;
 };
