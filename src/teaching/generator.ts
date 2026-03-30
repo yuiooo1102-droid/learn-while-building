@@ -88,7 +88,7 @@ export async function generateTeaching(
       title: String(parsed.title ?? ""),
       explanation: String(parsed.explanation ?? ""),
       concepts: Array.isArray(parsed.concepts)
-        ? (parsed.concepts as Array<{ name: string; label: string; level: number }>)
+        ? (parsed.concepts as Array<{ name: string; label: string; level: 0 | 1 | 2 | 3 }>)
         : [],
       reasoning: String(parsed.reasoning ?? ""),
     };
