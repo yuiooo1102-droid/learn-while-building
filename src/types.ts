@@ -33,8 +33,36 @@ export type TeachingContent = {
   readonly reasoning: string;
 };
 
+export type Exercise = {
+  readonly type: "exercise";
+  readonly question: string;
+  readonly options?: ReadonlyArray<string>;
+  readonly hint?: string;
+};
+
+export type ExerciseFeedback = {
+  readonly type: "feedback";
+  readonly correct: boolean;
+  readonly explanation: string;
+  readonly conceptUpdates: ReadonlyArray<{
+    readonly name: string;
+    readonly newLevel: ConceptLevel;
+  }>;
+};
+
+export type LwbConfig = {
+  readonly model: string;
+};
+
+export type ClientMessage = {
+  readonly type: "answer";
+  readonly answer: string;
+};
+
 export type WatchMessage =
   | TeachingContent
+  | Exercise
+  | ExerciseFeedback
   | { readonly type: "status"; readonly message: string }
   | { readonly type: "loading"; readonly title: string };
 
