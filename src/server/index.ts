@@ -53,6 +53,15 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   // Process event: for simple ops use template, for complex ops request Claude to teach
   function processEvent(event: HookEvent): string | null {
     const toolInput = event.tool_input as Record<string, unknown>;
+
+    // Filter out teaching curl commands to prevent recursion
+    if (event.tool_name === "Bash") {
+      const cmd = String(toolInput.command ?? "");
+      if (cmd.includes("/teach") || cmd.includes("/exercise") || cmd.includes("/config") || cmd.includes("/status") || cmd.includes("/reset")) {
+        return null;
+      }
+    }
+
     lastEvent = event;
 
     // Static template for simple operations
@@ -153,6 +162,18 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     return reply.status(200).send(config);
   });
 
+  // Knowledge status — broadcast to watch client
+  app.post("/status", async (_request, reply) => {
+    broadcast({ type: "knowledge_status", data: knowledge });
+    return reply.status(200).send();
+  });
+
+  // Reset — broadcast confirmation request to watch client
+  app.post("/reset", async (_request, reply) => {
+    broadcast({ type: "confirm_reset" });
+    return reply.status(200).send();
+  });
+
   app.get("/ws", { websocket: true }, (socket) => {
     clients.add(socket);
     socket.send(JSON.stringify({ type: "status", message: "已连接到教学服务" }));
@@ -161,8 +182,11 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
       try {
         const msg = JSON.parse(String(raw)) as ClientMessage;
         if (msg.type === "answer") {
-          // For now, just acknowledge — exercise judging will be added when API is available
           broadcast({ type: "status", message: "收到答案，感谢作答！" });
+        } else if (msg.type === "confirm_reset" && msg.confirmed) {
+          knowledge = { concepts: {} };
+          saveKnowledge(KNOWLEDGE_PATH, knowledge).catch(() => {});
+          broadcast({ type: "status", message: "学习进度已重置" });
         }
       } catch { /* Ignore invalid messages */ }
     });

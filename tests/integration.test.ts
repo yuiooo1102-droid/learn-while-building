@@ -125,4 +125,60 @@ describe("Server integration", () => {
     });
     expect(getResponse.json().model).toBe("claude-haiku-4-5-20251001");
   });
+
+  it("broadcasts status on POST /status", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/status",
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("broadcasts reset confirmation on POST /reset", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/reset",
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("updates config depth", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/config",
+      payload: { depth: 3 },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().depth).toBe(3);
+  });
+
+  it("rejects invalid depth", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/config",
+      payload: { depth: 5 },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().depth).toBe(2);
+  });
 });

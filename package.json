@@ -1,6 +1,6 @@
 {
   "name": "learn-while-building",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Real-time teaching companion for Claude Code — learn programming while AI builds your project",
   "type": "module",
   "bin": {

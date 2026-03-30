@@ -85,6 +85,22 @@ curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json'
 ```
 Then confirm: 已设置教学深度为 <number>。
 
+### /learn status
+
+Show knowledge progress in the teaching pane:
+```bash
+curl -s -X POST http://127.0.0.1:3579/status
+```
+Then tell the user: 学习进度已显示在右侧面板。
+
+### /learn reset
+
+Reset all learning progress (requires confirmation in teaching pane):
+```bash
+curl -s -X POST http://127.0.0.1:3579/reset
+```
+Then tell the user: 请在右侧面板确认是否重置。
+
 ## Teaching Content Generation
 
 **IMPORTANT**: When the PostToolUse hook returns `additionalContext` with a `[TEACHING MODE]` instruction, you MUST:
