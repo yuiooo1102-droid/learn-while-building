@@ -26,13 +26,12 @@ describe("buildPrompt", () => {
 
     const prompt = buildPrompt(event, knowledge, recentSteps);
 
-    // Should contain the actual code, not just tool name
     expect(prompt).toContain("import express");
     expect(prompt).toContain("const app");
     expect(prompt).toContain("index.ts");
     expect(prompt).toContain("variable");
-    expect(prompt).toContain("已掌握");
-    expect(prompt).toContain("编程概念");
+    expect(prompt).toContain("mastered");
+    expect(prompt).toContain("programming concepts");
   });
 
   it("includes diff content for Edit tool", () => {
@@ -50,8 +49,8 @@ describe("buildPrompt", () => {
 
     expect(prompt).toContain("let x = 1");
     expect(prompt).toContain("const x = 1");
-    expect(prompt).toContain("修改前");
-    expect(prompt).toContain("修改后");
+    expect(prompt).toContain("Before");
+    expect(prompt).toContain("After");
   });
 
   it("handles empty knowledge store", () => {
@@ -67,7 +66,7 @@ describe("buildPrompt", () => {
 
     const prompt = buildPrompt(event, { concepts: {} }, []);
     expect(prompt).toContain("npm install react");
-    expect(prompt).toContain("执行命令");
+    expect(prompt).toContain("Run command");
   });
 
   it("adjusts verbosity for depth 1 (brief)", () => {
@@ -77,7 +76,7 @@ describe("buildPrompt", () => {
       tool_response: { success: true }, tool_use_id: "t1", cwd: "/project",
     };
     const prompt = buildPrompt(event, { concepts: {} }, [], 1);
-    expect(prompt).toContain("80 字");
+    expect(prompt).toContain("80 words");
   });
 
   it("adjusts verbosity for depth 3 (detailed)", () => {
@@ -87,21 +86,21 @@ describe("buildPrompt", () => {
       tool_response: { success: true }, tool_use_id: "t1", cwd: "/project",
     };
     const prompt = buildPrompt(event, { concepts: {} }, [], 3);
-    expect(prompt).toContain("400 字");
+    expect(prompt).toContain("400 words");
   });
 });
 
 describe("generateTeaching", () => {
-  it("calls Anthropic API and returns parsed content", async () => {
+  it("calls Anthropic API with provided model and returns parsed content", async () => {
     const mockCreate = vi.fn().mockResolvedValue({
       content: [
         {
           type: "text",
           text: JSON.stringify({
-            title: "安装 React",
-            explanation: "这是一个UI框架",
-            concepts: [{ name: "npm_install", label: "包安装", level: 1 }],
-            reasoning: "项目需要 React 来构建界面",
+            title: "Install React",
+            explanation: "A UI framework",
+            concepts: [{ name: "npm_install", label: "Package Install", level: 1 }],
+            reasoning: "Project needs React to build the interface",
           }),
         },
       ],
@@ -130,7 +129,7 @@ describe("generateTeaching", () => {
     );
 
     expect(result.type).toBe("teaching");
-    expect(result.title).toBe("安装 React");
+    expect(result.title).toBe("Install React");
     expect(mockCreate).toHaveBeenCalledOnce();
 
     const callArgs = mockCreate.mock.calls[0][0];

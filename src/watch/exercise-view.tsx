@@ -14,7 +14,7 @@ export function ExerciseView({ exercise, inputValue, onInputChange, onSubmit }: 
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color="yellow">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
-      <Box><Text bold>🎯 试试看！</Text></Box>
+      <Box><Text bold>🎯 Try it!</Text></Box>
       <Box><Text bold color="yellow">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
 
       <Box flexDirection="column" marginTop={1}>
@@ -34,7 +34,7 @@ export function ExerciseView({ exercise, inputValue, onInputChange, onSubmit }: 
       )}
 
       <Box marginTop={1}>
-        <Text>输入答案 (输入 skip 跳过): </Text>
+        <Text>Your answer (type skip to skip): </Text>
         <TextInput value={inputValue} onChange={onInputChange} onSubmit={onSubmit} />
       </Box>
 
@@ -51,7 +51,7 @@ export function FeedbackView({ feedback }: FeedbackProps) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color={feedback.correct ? "green" : "red"}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
-      <Box><Text bold>{feedback.correct ? "✅ 回答正确！" : "❌ 不太对"}</Text></Box>
+      <Box><Text bold>{feedback.correct ? "✅ Correct!" : "❌ Not quite"}</Text></Box>
       <Box><Text bold color={feedback.correct ? "green" : "red"}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
 
       <Box flexDirection="column" marginTop={1}>

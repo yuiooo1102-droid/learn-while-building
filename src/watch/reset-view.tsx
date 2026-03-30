@@ -13,10 +13,10 @@ export default function ResetView({ inputValue, onInputChange, onSubmit }: Props
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color="red">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
       <Box flexDirection="column" marginTop={1}>
-        <Text bold color="red">⚠️  这将清除所有已记录的学习进度，无法恢复。</Text>
+        <Text bold color="red">⚠️  This will erase all learning progress permanently.</Text>
       </Box>
       <Box marginTop={1}>
-        <Text>确定要重置吗？(y/N): </Text>
+        <Text>Are you sure? (y/N): </Text>
         <TextInput value={inputValue} onChange={onInputChange} onSubmit={onSubmit} />
       </Box>
       <Box marginTop={1}><Text bold color="red">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>

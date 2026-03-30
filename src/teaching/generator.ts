@@ -7,10 +7,10 @@ import type {
 } from "../types.js";
 
 const LEVEL_LABELS: Record<number, string> = {
-  0: "未接触",
-  1: "见过",
-  2: "理解",
-  3: "已掌握",
+  0: "not seen",
+  1: "seen",
+  2: "understood",
+  3: "mastered",
 };
 
 export function buildPrompt(
@@ -26,12 +26,12 @@ export function buildPrompt(
       ? conceptEntries
           .map(([name, state]) => `- ${name}: ${LEVEL_LABELS[state.level]}`)
           .join("\n")
-      : "- (暂无学习记录)";
+      : "- (no learning history yet)";
 
   const stepsSection =
     recentSteps.length > 0
       ? recentSteps.map((s) => `- [${s.toolName}] ${s.summary}`).join("\n")
-      : "- (这是第一步)";
+      : "- (this is the first step)";
 
   const toolName = event.tool_name;
   const toolInput = event.tool_input;
@@ -42,68 +42,68 @@ export function buildPrompt(
 
   if (toolName === "Write" || toolName === "MultiEdit") {
     codeContent = String(toolInput.content ?? "").slice(0, 1500);
-    operationContext = `创建/写入文件: ${String(toolInput.file_path ?? "").split("/").pop()}\n\n代码内容:\n\`\`\`\n${codeContent}\n\`\`\``;
+    operationContext = `Create/write file: ${String(toolInput.file_path ?? "").split("/").pop()}\n\nCode content:\n\`\`\`\n${codeContent}\n\`\`\``;
   } else if (toolName === "Edit") {
     const oldStr = String(toolInput.old_string ?? "").slice(0, 500);
     const newStr = String(toolInput.new_string ?? "").slice(0, 500);
-    operationContext = `编辑文件: ${String(toolInput.file_path ?? "").split("/").pop()}\n\n修改前:\n\`\`\`\n${oldStr}\n\`\`\`\n\n修改后:\n\`\`\`\n${newStr}\n\`\`\``;
+    operationContext = `Edit file: ${String(toolInput.file_path ?? "").split("/").pop()}\n\nBefore:\n\`\`\`\n${oldStr}\n\`\`\`\n\nAfter:\n\`\`\`\n${newStr}\n\`\`\``;
   } else if (toolName === "Bash") {
     const cmd = String(toolInput.command ?? "");
     const output = JSON.stringify(event.tool_response, null, 2).slice(0, 800);
-    operationContext = `执行命令: ${cmd}\n\n输出:\n${output}`;
+    operationContext = `Run command: ${cmd}\n\nOutput:\n${output}`;
   } else if (toolName === "Read") {
     const fileContent = JSON.stringify(event.tool_response, null, 2).slice(0, 1500);
-    operationContext = `读取文件: ${String(toolInput.file_path ?? "").split("/").pop()}\n\n文件内容:\n${fileContent}`;
+    operationContext = `Read file: ${String(toolInput.file_path ?? "").split("/").pop()}\n\nFile content:\n${fileContent}`;
   } else {
-    operationContext = `工具: ${toolName}\n参数: ${JSON.stringify(toolInput, null, 2).slice(0, 800)}`;
+    operationContext = `Tool: ${toolName}\nArgs: ${JSON.stringify(toolInput, null, 2).slice(0, 800)}`;
   }
 
   const langInstruction = lang === "auto"
-    ? "使用与用户对话相同的语言（从上下文推断）"
-    : `使用${lang}`;
+    ? "Use the same language as the user's conversation (infer from context)"
+    : `Use ${lang}`;
 
   const depthInstructions: Record<number, string> = {
-    1: `规则：
-1. 每个概念用一句话概括
-2. 总共不超过 80 字
+    1: `Rules:
+1. Summarize each concept in one sentence
+2. Total explanation under 80 words
 3. ${langInstruction}`,
-    2: `规则：
-1. 重点分析代码内容中的编程概念，不要只说"AI 创建了一个文件"
-2. 已掌握的概念一笔带过，聚焦用户还不会的概念
-3. 未接触的概念用生活化类比详细解释
-4. 如果代码包含多个概念，挑最重要的 2-3 个重点讲
-5. explanation 控制在 200 字以内
+    2: `Rules:
+1. Focus on the programming concepts in the code, not just "AI created a file"
+2. Briefly mention already-mastered concepts; focus on what the user hasn't learned yet
+3. Explain unfamiliar concepts with everyday analogies in detail
+4. If the code contains multiple concepts, highlight the 2-3 most important ones
+5. Keep explanation under 200 words
 6. ${langInstruction}`,
-    3: `规则：
-1. 每个概念都详细展开，多用生活化类比和简化的代码示例
-2. 解释概念之间的关系和联系
-3. 即使是已掌握的概念，也简要提及以建立完整的知识网络
-4. explanation 可以写到 400 字
+    3: `Rules:
+1. Elaborate on each concept with everyday analogies and simplified code examples
+2. Explain the relationships and connections between concepts
+3. Briefly mention even mastered concepts to build a complete knowledge network
+4. Explanation can be up to 400 words
 5. ${langInstruction}`,
   };
 
-  return `你是一个编程教师，正在向一个非程序员实时解释 AI 编程助手写的代码和操作。
+  return `You are a programming teacher explaining in real time what an AI coding assistant is doing to a non-programmer.
 
-你的核心任务不是解释"AI 用了什么工具"，而是解释**代码里包含了哪些编程概念**。
+Your core task is not to explain "what tool the AI used" but to explain **what programming concepts are present in the code**.
 
-当前用户知识状态：
+Current user knowledge state:
 ${knowledgeSection}
 
-AI 刚才的操作：
+What the AI just did:
 ${operationContext}
 
-最近几步上下文：
+Recent context steps:
 ${stepsSection}
 
-请分析代码内容，找出其中的编程概念并解释。严格按以下 JSON 格式输出（不要输出其他内容）：
+Analyze the code content, identify the programming concepts, and explain them. Output strictly in the following JSON format (no other text):
 {
-  "title": "简短标题（描述这步的核心编程概念，而非工具操作）",
-  "explanation": "用生活化的语言解释代码中的编程概念。比如看到 import 就解释模块导入，看到 async/await 就解释异步编程，看到 if/else 就解释条件判断。未接触的概念要详细解释并用类比，已掌握的概念一笔带过",
-  "concepts": [{"name": "概念英文名", "label": "概念中文名", "level": 1}],
-  "reasoning": "为什么 AI 在这一步选择了这样的代码写法"
+  "title": "Short title (describing the core programming concept of this step, not the tool operation)",
+  "explanation": "Explain the programming concepts in the code using everyday language. E.g. if you see import, explain module imports; async/await, explain asynchronous programming; if/else, explain conditionals. Explain unfamiliar concepts in detail with analogies; briefly mention mastered ones.",
+  "concepts": [{"name": "concept-name-in-english", "label": "Display label", "level": 1}],
+  "reasoning": "Why the AI chose this particular code approach in this step"
 }
 
-概念示例（不限于此）：variable, function, import, export, async_await, promise, array, object, loop, condition, type_annotation, interface, class, error_handling, callback, template_literal, destructuring, spread_operator, arrow_function, api_call, npm_package, file_io, http_request, json, regex, event_listener
+Concept examples (not limited to): variable, function, import, export, async_await, promise, array, object, loop, condition, type_annotation, interface, class, error_handling, callback, template_literal, destructuring, spread_operator, arrow_function, api_call, npm_package, file_io, http_request, json, regex, event_listener
 
 ${depthInstructions[depth]}`;
 }
@@ -142,7 +142,7 @@ export async function generateTeaching(
   } catch {
     return {
       type: "teaching",
-      title: `${event.tool_name} 操作`,
+      title: `${event.tool_name} operation`,
       explanation: text.slice(0, 300),
       concepts: [],
       reasoning: "",

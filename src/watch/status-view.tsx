@@ -3,10 +3,10 @@ import { Box, Text, useInput } from "ink";
 import type { KnowledgeStore, ConceptLevel } from "../types.js";
 
 const LEVEL_CONFIG: Record<ConceptLevel, { icon: string; label: string; color: string }> = {
-  3: { icon: "🟢", label: "已掌握", color: "green" },
-  2: { icon: "🔵", label: "理解", color: "blue" },
-  1: { icon: "🟡", label: "见过", color: "yellow" },
-  0: { icon: "🔴", label: "薄弱", color: "red" },
+  3: { icon: "🟢", label: "Mastered", color: "green" },
+  2: { icon: "🔵", label: "Understood", color: "blue" },
+  1: { icon: "🟡", label: "Seen", color: "yellow" },
+  0: { icon: "🔴", label: "Weak", color: "red" },
 };
 
 type Props = { readonly data: KnowledgeStore; readonly onDismiss: () => void };
@@ -24,7 +24,7 @@ export default function StatusView({ data, onDismiss }: Props) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
-      <Box><Text bold>📊 学习进度</Text></Box>
+      <Box><Text bold>📊 Learning Progress</Text></Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
       {([3, 2, 1, 0] as ConceptLevel[]).map((level) => {
         const concepts = grouped[level];
@@ -36,8 +36,8 @@ export default function StatusView({ data, onDismiss }: Props) {
           </Box>
         );
       })}
-      <Box marginTop={1}><Text>总计: {total} 个概念 | 学习天数: {days}</Text></Box>
-      <Box marginTop={1}><Text color="gray">按任意键返回...</Text></Box>
+      <Box marginTop={1}><Text>Total: {total} concepts | Days learning: {days}</Text></Box>
+      <Box marginTop={1}><Text color="gray">Press any key to return...</Text></Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
     </Box>
   );

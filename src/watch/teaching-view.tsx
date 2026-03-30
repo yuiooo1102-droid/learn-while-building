@@ -11,10 +11,10 @@ const LEVEL_ICONS: Record<ConceptLevel, string> = {
 };
 
 const LEVEL_LABELS: Record<ConceptLevel, string> = {
-  0: "未接触",
-  1: "见过",
-  2: "理解",
-  3: "已掌握",
+  0: "New",
+  1: "Seen",
+  2: "Understood",
+  3: "Mastered",
 };
 
 type Props = {
@@ -39,13 +39,13 @@ export default function TeachingView({ content }: Props) {
       </Box>
 
       <Box flexDirection="column" marginTop={1}>
-        <Text bold>这一步做了什么：</Text>
+        <Text bold>What happened:</Text>
         <Text>  {content.explanation}</Text>
       </Box>
 
       {content.concepts.length > 0 && (
         <Box flexDirection="column" marginTop={1}>
-          <Text bold>涉及概念：</Text>
+          <Text bold>Concepts:</Text>
           {content.concepts.map((c) => (
             <Text key={c.name}>
               {"  "}• {c.label} ({c.name}) {LEVEL_ICONS[c.level]}{" "}
@@ -57,7 +57,7 @@ export default function TeachingView({ content }: Props) {
 
       {content.reasoning && (
         <Box flexDirection="column" marginTop={1}>
-          <Text bold>为什么这样做：</Text>
+          <Text bold>Why this approach:</Text>
           <Text>  {content.reasoning}</Text>
         </Box>
       )}

@@ -19,23 +19,23 @@ function bashTemplate(input: Record<string, unknown>): TeachingContent {
   const firstWord = cmd.split(/\s/)[0];
 
   const descriptions: Record<string, string> = {
-    ls: "查看文件夹里有哪些文件和子文件夹，就像打开抽屉看看里面有什么。",
-    cd: "切换到另一个文件夹，就像走进另一个房间。",
-    pwd: "显示当前所在的文件夹路径，就像查看你在地图上的位置。",
-    mkdir: "创建一个新的文件夹，就像在柜子里加一个新抽屉。",
-    cat: "显示一个文件的全部内容。",
-    echo: "在终端打印一段文字。",
-    clear: "清空终端屏幕，让界面更整洁。",
-    which: "查找一个命令安装在哪个位置。",
-    whoami: "显示当前登录的用户名。",
+    ls: "List files and subdirectories in a folder, like opening a drawer to see what's inside.",
+    cd: "Switch to another folder, like walking into a different room.",
+    pwd: "Show the current folder path, like checking your position on a map.",
+    mkdir: "Create a new folder, like adding a new drawer to a cabinet.",
+    cat: "Display the full contents of a file.",
+    echo: "Print a line of text to the terminal.",
+    clear: "Clear the terminal screen to tidy up the display.",
+    which: "Find where a command is installed on the system.",
+    whoami: "Show the currently logged-in username.",
   };
 
   return {
     type: "teaching",
-    title: `执行命令: ${cmd}`,
-    explanation: descriptions[firstWord] ?? `执行了 ${firstWord} 命令。`,
-    concepts: [{ name: "terminal_command", label: "终端命令", level: 1 }],
-    reasoning: "AI 在用终端命令来了解或整理项目的文件结构。",
+    title: `Run command: ${cmd}`,
+    explanation: descriptions[firstWord] ?? `Ran the ${firstWord} command.`,
+    concepts: [{ name: "terminal_command", label: "Terminal Command", level: 1 }],
+    reasoning: "The AI is using terminal commands to explore or organize the project file structure.",
   };
 }
 
