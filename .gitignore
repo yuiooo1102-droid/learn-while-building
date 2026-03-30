@@ -1,2 +1,5 @@
 node_modules/
 dist/
+# Dev files
+prescore-*.md
+docs/superpowers/
