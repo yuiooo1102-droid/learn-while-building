@@ -1,10 +1,15 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import type { LwbConfig } from "../types.js";
+import type { LwbConfig, DepthLevel } from "../types.js";
 
 export const DEFAULT_CONFIG: LwbConfig = {
   model: "claude-sonnet-4-6",
+  depth: 2,
 };
+
+function isValidDepth(value: unknown): value is DepthLevel {
+  return value === 1 || value === 2 || value === 3;
+}
 
 export async function loadConfig(filePath: string): Promise<LwbConfig> {
   try {
@@ -12,16 +17,14 @@ export async function loadConfig(filePath: string): Promise<LwbConfig> {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return {
       model: typeof parsed.model === "string" ? parsed.model : DEFAULT_CONFIG.model,
+      depth: isValidDepth(parsed.depth) ? parsed.depth : DEFAULT_CONFIG.depth,
     };
   } catch {
     return { ...DEFAULT_CONFIG };
   }
 }
 
-export async function saveConfig(
-  filePath: string,
-  config: LwbConfig,
-): Promise<void> {
+export async function saveConfig(filePath: string, config: LwbConfig): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(config, null, 2));
 }

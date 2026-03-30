@@ -34,6 +34,20 @@ describe("loadConfig", () => {
     const config = await loadConfig(TEST_PATH);
     expect(config).toEqual(DEFAULT_CONFIG);
   });
+
+  it("returns default depth when not set", async () => {
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(TEST_PATH, JSON.stringify({ model: "claude-sonnet-4-6" }));
+    const config = await loadConfig(TEST_PATH);
+    expect(config.depth).toBe(2);
+  });
+
+  it("reads depth from config file", async () => {
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(TEST_PATH, JSON.stringify({ model: "claude-sonnet-4-6", depth: 3 }));
+    const config = await loadConfig(TEST_PATH);
+    expect(config.depth).toBe(3);
+  });
 });
 
 describe("saveConfig", () => {
