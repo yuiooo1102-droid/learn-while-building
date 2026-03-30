@@ -70,17 +70,24 @@ describe("Server integration", () => {
     expect(response.statusCode).toBe(200);
   });
 
-  it("returns 400 for manual trigger with no context", async () => {
+  it("accepts teaching content via POST /teach", async () => {
     const server = await createServer();
     app = server.app;
     await app.listen({ port: 0, host: "127.0.0.1" });
 
     const response = await app.inject({
       method: "POST",
-      url: "/exercise/trigger",
+      url: "/teach",
+      payload: {
+        title: "变量声明",
+        explanation: "const 声明一个不可变的变量",
+        concepts: [{ name: "variable", label: "变量", level: 1 }],
+        reasoning: "需要存储数据",
+      },
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
   });
 
   it("returns default config", async () => {

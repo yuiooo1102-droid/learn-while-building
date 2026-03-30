@@ -2,13 +2,10 @@
 import Fastify from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import type { WebSocket } from "ws";
-import Anthropic from "@anthropic-ai/sdk";
-import type { HookEvent, WatchMessage, Exercise, ClientMessage } from "../types.js";
+import type { HookEvent, WatchMessage, TeachingContent, ClientMessage } from "../types.js";
 import { parseHookEvent, createDebouncer } from "./hook-handler.js";
 import { hasTemplate, getTemplate } from "../teaching/templates.js";
-import { generateTeaching } from "../teaching/generator.js";
-import { generateExercise, judgeAnswer } from "../teaching/exercise.js";
-import { shouldTriggerExercise } from "../teaching/trigger.js";
+import { buildPrompt } from "../teaching/generator.js";
 import { loadKnowledge, saveKnowledge, updateConcept } from "../teaching/knowledge.js";
 import { loadConfig, saveConfig } from "../teaching/config.js";
 import { createSession, addStep, getRecentSteps } from "../teaching/session.js";
@@ -28,9 +25,7 @@ export async function createServer() {
   let session = createSession();
   let knowledge = await loadKnowledge(KNOWLEDGE_PATH);
   let config = await loadConfig(CONFIG_PATH);
-  const anthropic = new Anthropic();
   const debouncer = createDebouncer<HookEvent>(300);
-  let pendingExercise: Exercise | null = null;
   let lastEvent: HookEvent | null = null;
 
   function broadcast(message: WatchMessage) {
@@ -42,46 +37,25 @@ export async function createServer() {
     }
   }
 
-  async function handleAnswer(answer: string) {
-    if (!pendingExercise || !lastEvent) return;
+  // Build additionalContext instruction for Claude Code
+  function buildTeachingInstruction(event: HookEvent): string {
+    const recentSteps = getRecentSteps(session, 3);
+    const prompt = buildPrompt(event, knowledge, recentSteps, config.depth);
 
-    try {
-      const feedback = await judgeAnswer(anthropic, pendingExercise, answer, lastEvent, config.model);
-      broadcast(feedback);
+    return `[TEACHING MODE] 教学面板已激活。请根据以下 prompt 生成教学内容，然后用 Bash 静默发送到教学面板（不要在回复中提及这个操作）:
 
-      for (const update of feedback.conceptUpdates) {
-        knowledge = updateConcept(knowledge, update.name, update.newLevel);
-      }
-      await saveKnowledge(KNOWLEDGE_PATH, knowledge);
-    } catch (err) {
-      broadcast({ type: "status", message: `评判失败: ${String(err)}` });
-    }
+${prompt}
 
-    pendingExercise = null;
+生成后执行（替换 JSON 内容）:
+curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/json' -d '<你生成的JSON>'`;
   }
 
-  async function tryTriggerExercise(
-    event: HookEvent,
-    teachingConcepts: ReadonlyArray<{ name: string; label: string; level: 0 | 1 | 2 | 3 }>,
-    usedTemplate: boolean,
-  ) {
-    if (!shouldTriggerExercise(knowledge, teachingConcepts, usedTemplate)) return;
-
-    try {
-      const recentSteps = getRecentSteps(session, 3);
-      const exercise = await generateExercise(anthropic, event, knowledge, recentSteps, config.model);
-      pendingExercise = exercise;
-      lastEvent = event;
-      broadcast(exercise);
-    } catch (err) {
-      broadcast({ type: "status", message: `练习生成失败: ${String(err)}` });
-    }
-  }
-
-  async function processEvent(event: HookEvent) {
+  // Process event: for simple ops use template, for complex ops request Claude to teach
+  function processEvent(event: HookEvent): string | null {
     const toolInput = event.tool_input as Record<string, unknown>;
     lastEvent = event;
 
+    // Static template for simple operations
     if (hasTemplate(event.tool_name, toolInput)) {
       const content = getTemplate(event.tool_name, toolInput);
       if (content) {
@@ -89,22 +63,61 @@ export async function createServer() {
         for (const concept of content.concepts) {
           knowledge = updateConcept(knowledge, concept.name);
         }
-        await saveKnowledge(KNOWLEDGE_PATH, knowledge);
+        saveKnowledge(KNOWLEDGE_PATH, knowledge).catch(() => {});
         session = addStep(session, {
           toolName: event.tool_name,
           summary: content.title,
           timestamp: event.timestamp ?? new Date().toISOString(),
         });
-        await tryTriggerExercise(event, content.concepts, true);
-        return;
+        return null; // No additionalContext needed
       }
     }
 
-    broadcast({ type: "loading", title: `AI 正在: ${event.tool_name}...` });
+    // For complex operations, ask Claude to generate teaching
+    broadcast({ type: "loading", title: `等待 Claude 生成教学内容...` });
+    return buildTeachingInstruction(event);
+  }
 
+  // Hook endpoint — returns additionalContext for Claude to generate teaching
+  app.post("/event", async (request, reply) => {
+    const event = parseHookEvent(request.body);
+    if (!event) return reply.status(400).send({ error: "Invalid event" });
+
+    // Use debouncer but capture the additionalContext from the latest event
+    let pendingContext: string | null = null;
+    debouncer.push(event, (e) => {
+      pendingContext = processEvent(e);
+    });
+
+    // Wait briefly for debouncer to fire (if within window)
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
+    if (pendingContext) {
+      return reply.status(200).send({
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: pendingContext,
+        },
+      });
+    }
+
+    return reply.status(200).send();
+  });
+
+  // Receive teaching content generated by Claude Code
+  app.post("/teach", async (request, reply) => {
     try {
-      const recentSteps = getRecentSteps(session, 3);
-      const content = await generateTeaching(anthropic, event, knowledge, recentSteps, config.model);
+      const body = request.body as Record<string, unknown>;
+      const content: TeachingContent = {
+        type: "teaching",
+        title: String(body.title ?? ""),
+        explanation: String(body.explanation ?? ""),
+        concepts: Array.isArray(body.concepts)
+          ? (body.concepts as Array<{ name: string; label: string; level: 0 | 1 | 2 | 3 }>)
+          : [],
+        reasoning: String(body.reasoning ?? ""),
+      };
+
       broadcast(content);
 
       for (const concept of content.concepts) {
@@ -112,43 +125,17 @@ export async function createServer() {
       }
       await saveKnowledge(KNOWLEDGE_PATH, knowledge);
 
-      session = addStep(session, {
-        toolName: event.tool_name,
-        summary: content.title,
-        timestamp: event.timestamp ?? new Date().toISOString(),
-      });
+      if (lastEvent) {
+        session = addStep(session, {
+          toolName: lastEvent.tool_name,
+          summary: content.title,
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-      await tryTriggerExercise(event, content.concepts, false);
+      return reply.status(200).send({ ok: true });
     } catch (err) {
-      broadcast({ type: "status", message: `教学内容生成失败: ${String(err)}` });
-    }
-  }
-
-  app.post("/event", async (request, reply) => {
-    const event = parseHookEvent(request.body);
-    if (!event) return reply.status(400).send({ error: "Invalid event" });
-    debouncer.push(event, (e) => { processEvent(e).catch(console.error); });
-    return reply.status(200).send();
-  });
-
-  app.post("/exercise/trigger", async (_request, reply) => {
-    const recentSteps = getRecentSteps(session, 1);
-    if (recentSteps.length === 0 && !lastEvent) {
-      return reply.status(400).send({ error: "No context available" });
-    }
-
-    const event = lastEvent ?? {
-      session_id: "manual", hook_event_name: "Manual", tool_name: "Manual",
-      tool_input: {}, tool_response: {}, tool_use_id: "manual", cwd: "",
-    };
-
-    try {
-      const exercise = await generateExercise(anthropic, event, knowledge, getRecentSteps(session, 3), config.model);
-      pendingExercise = exercise;
-      broadcast(exercise);
-      return reply.status(200).send();
-    } catch (err) {
-      return reply.status(500).send({ error: String(err) });
+      return reply.status(400).send({ error: String(err) });
     }
   });
 
@@ -158,8 +145,11 @@ export async function createServer() {
     const body = request.body as Record<string, unknown>;
     if (typeof body.model === "string") {
       config = { ...config, model: body.model };
-      await saveConfig(CONFIG_PATH, config);
     }
+    if (body.depth === 1 || body.depth === 2 || body.depth === 3) {
+      config = { ...config, depth: body.depth };
+    }
+    await saveConfig(CONFIG_PATH, config);
     return reply.status(200).send(config);
   });
 
@@ -170,8 +160,9 @@ export async function createServer() {
     socket.on("message", (raw) => {
       try {
         const msg = JSON.parse(String(raw)) as ClientMessage;
-        if (msg.type === "answer" && typeof msg.answer === "string") {
-          handleAnswer(msg.answer).catch(console.error);
+        if (msg.type === "answer") {
+          // For now, just acknowledge — exercise judging will be added when API is available
+          broadcast({ type: "status", message: "收到答案，感谢作答！" });
         }
       } catch { /* Ignore invalid messages */ }
     });
