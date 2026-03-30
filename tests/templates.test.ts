@@ -19,13 +19,10 @@ describe("hasTemplate", () => {
     expect(hasTemplate("Edit", { file_path: "/src/index.ts" })).toBe(false);
   });
 
-  it("returns true for Glob and Grep tools", () => {
-    expect(hasTemplate("Glob", { pattern: "**/*.ts" })).toBe(true);
-    expect(hasTemplate("Grep", { pattern: "import" })).toBe(true);
-  });
-
-  it("returns true for Read tool", () => {
-    expect(hasTemplate("Read", { file_path: "/src/index.ts" })).toBe(true);
+  it("returns false for Glob, Grep, Read tools (now handled by LLM)", () => {
+    expect(hasTemplate("Glob", { pattern: "**/*.ts" })).toBe(false);
+    expect(hasTemplate("Grep", { pattern: "import" })).toBe(false);
+    expect(hasTemplate("Read", { file_path: "/src/index.ts" })).toBe(false);
   });
 });
 

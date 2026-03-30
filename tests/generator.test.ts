@@ -3,12 +3,12 @@ import { generateTeaching, buildPrompt } from "../src/teaching/generator.js";
 import type { HookEvent, KnowledgeStore, SessionStep } from "../src/types.js";
 
 describe("buildPrompt", () => {
-  it("includes tool name and input in prompt", () => {
+  it("includes code content for Write tool", () => {
     const event: HookEvent = {
       session_id: "s1",
       hook_event_name: "PostToolUse",
       tool_name: "Write",
-      tool_input: { file_path: "/src/index.ts", content: "console.log('hello')" },
+      tool_input: { file_path: "/src/index.ts", content: "import express from 'express';\nconst app = express();" },
       tool_response: { success: true },
       tool_use_id: "t1",
       cwd: "/project",
@@ -26,11 +26,32 @@ describe("buildPrompt", () => {
 
     const prompt = buildPrompt(event, knowledge, recentSteps);
 
-    expect(prompt).toContain("Write");
+    // Should contain the actual code, not just tool name
+    expect(prompt).toContain("import express");
+    expect(prompt).toContain("const app");
     expect(prompt).toContain("index.ts");
     expect(prompt).toContain("variable");
     expect(prompt).toContain("已掌握");
-    expect(prompt).toContain("npm init");
+    expect(prompt).toContain("编程概念");
+  });
+
+  it("includes diff content for Edit tool", () => {
+    const event: HookEvent = {
+      session_id: "s1",
+      hook_event_name: "PostToolUse",
+      tool_name: "Edit",
+      tool_input: { file_path: "/src/app.ts", old_string: "let x = 1", new_string: "const x = 1" },
+      tool_response: { success: true },
+      tool_use_id: "t2",
+      cwd: "/project",
+    };
+
+    const prompt = buildPrompt(event, { concepts: {} }, []);
+
+    expect(prompt).toContain("let x = 1");
+    expect(prompt).toContain("const x = 1");
+    expect(prompt).toContain("修改前");
+    expect(prompt).toContain("修改后");
   });
 
   it("handles empty knowledge store", () => {
@@ -45,8 +66,8 @@ describe("buildPrompt", () => {
     };
 
     const prompt = buildPrompt(event, { concepts: {} }, []);
-    expect(prompt).toContain("Bash");
     expect(prompt).toContain("npm install react");
+    expect(prompt).toContain("执行命令");
   });
 });
 

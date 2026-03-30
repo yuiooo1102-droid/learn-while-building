@@ -45,39 +45,6 @@ const rules: ReadonlyArray<TemplateRule> = [
     match: isBashSimple,
     generate: bashTemplate,
   },
-  {
-    tool: "Read",
-    match: () => true,
-    generate: (input) => ({
-      type: "teaching",
-      title: `读取文件: ${String(input.file_path ?? "").split("/").pop()}`,
-      explanation: "AI 正在阅读一个文件的内容，了解里面写了什么，就像翻开一页纸看看上面的内容。",
-      concepts: [{ name: "file_read", label: "读取文件", level: 1 }],
-      reasoning: "AI 需要先了解现有代码，才能做出合适的修改。",
-    }),
-  },
-  {
-    tool: "Glob",
-    match: () => true,
-    generate: (input) => ({
-      type: "teaching",
-      title: `搜索文件: ${String(input.pattern ?? "")}`,
-      explanation: "AI 正在按名称模式搜索文件，就像在文件柜里按标签找文件。",
-      concepts: [{ name: "file_search", label: "文件搜索", level: 1 }],
-      reasoning: "AI 需要找到相关的文件才能继续工作。",
-    }),
-  },
-  {
-    tool: "Grep",
-    match: () => true,
-    generate: (input) => ({
-      type: "teaching",
-      title: `搜索内容: "${String(input.pattern ?? "")}"`,
-      explanation: "AI 正在搜索文件内容中包含特定文字的地方，就像在一本书里搜索关键词。",
-      concepts: [{ name: "content_search", label: "内容搜索", level: 1 }],
-      reasoning: "AI 在查找代码中某个关键词出现的位置，以便理解代码结构。",
-    }),
-  },
 ];
 
 export function hasTemplate(
