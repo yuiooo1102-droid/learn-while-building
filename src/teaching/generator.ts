@@ -69,11 +69,12 @@ export async function generateTeaching(
   event: HookEvent,
   knowledge: KnowledgeStore,
   recentSteps: ReadonlyArray<SessionStep>,
+  model: string = "claude-sonnet-4-6",
 ): Promise<TeachingContent> {
   const prompt = buildPrompt(event, knowledge, recentSteps);
 
   const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model,
     max_tokens: 512,
     messages: [{ role: "user", content: prompt }],
   });

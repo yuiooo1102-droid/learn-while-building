@@ -85,6 +85,7 @@ describe("generateTeaching", () => {
       event,
       { concepts: {} },
       [],
+      "claude-sonnet-4-6",
     );
 
     expect(result.type).toBe("teaching");
@@ -92,6 +93,6 @@ describe("generateTeaching", () => {
     expect(mockCreate).toHaveBeenCalledOnce();
 
     const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.model).toContain("haiku");
+    expect(callArgs.model).toBe("claude-sonnet-4-6");
   });
 });
