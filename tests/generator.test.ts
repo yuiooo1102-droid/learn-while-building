@@ -69,6 +69,26 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("npm install react");
     expect(prompt).toContain("执行命令");
   });
+
+  it("adjusts verbosity for depth 1 (brief)", () => {
+    const event: HookEvent = {
+      session_id: "s1", hook_event_name: "PostToolUse", tool_name: "Write",
+      tool_input: { file_path: "/src/app.ts", content: "const x = 1;" },
+      tool_response: { success: true }, tool_use_id: "t1", cwd: "/project",
+    };
+    const prompt = buildPrompt(event, { concepts: {} }, [], 1);
+    expect(prompt).toContain("80 字");
+  });
+
+  it("adjusts verbosity for depth 3 (detailed)", () => {
+    const event: HookEvent = {
+      session_id: "s1", hook_event_name: "PostToolUse", tool_name: "Write",
+      tool_input: { file_path: "/src/app.ts", content: "const x = 1;" },
+      tool_response: { success: true }, tool_use_id: "t1", cwd: "/project",
+    };
+    const prompt = buildPrompt(event, { concepts: {} }, [], 3);
+    expect(prompt).toContain("400 字");
+  });
 });
 
 describe("generateTeaching", () => {
