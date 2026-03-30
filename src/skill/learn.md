@@ -85,6 +85,15 @@ curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json'
 ```
 Then confirm: 已设置教学深度为 <number>。
 
+### /learn lang <language>
+
+Set teaching language (default: auto, which follows user's conversation language):
+```bash
+curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json' -d '{"lang": "<language>"}'
+```
+Examples: `/learn lang zh` (中文), `/learn lang en` (English), `/learn lang auto` (auto-detect)
+Then confirm the language has been set.
+
 ### /learn status
 
 Show knowledge progress in the teaching pane:

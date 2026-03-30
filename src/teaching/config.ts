@@ -5,6 +5,7 @@ import type { LwbConfig, DepthLevel } from "../types.js";
 export const DEFAULT_CONFIG: LwbConfig = {
   model: "claude-sonnet-4-6",
   depth: 2,
+  lang: "auto",
 };
 
 function isValidDepth(value: unknown): value is DepthLevel {
@@ -18,6 +19,7 @@ export async function loadConfig(filePath: string): Promise<LwbConfig> {
     return {
       model: typeof parsed.model === "string" ? parsed.model : DEFAULT_CONFIG.model,
       depth: isValidDepth(parsed.depth) ? parsed.depth : DEFAULT_CONFIG.depth,
+      lang: typeof parsed.lang === "string" ? parsed.lang : DEFAULT_CONFIG.lang,
     };
   } catch {
     return { ...DEFAULT_CONFIG };

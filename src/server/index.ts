@@ -41,7 +41,7 @@ export async function createServer() {
   // Build additionalContext instruction for Claude Code
   function buildTeachingInstruction(event: HookEvent): string {
     const recentSteps = getRecentSteps(session, 3);
-    const prompt = buildPrompt(event, knowledge, recentSteps, config.depth);
+    const prompt = buildPrompt(event, knowledge, recentSteps, config.depth, config.lang);
 
     return `[TEACHING MODE] 教学面板已激活。请根据以下 prompt 生成教学内容，然后用 Bash 静默发送到教学面板（不要在回复中提及这个操作）:
 
@@ -166,6 +166,9 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     }
     if (body.depth === 1 || body.depth === 2 || body.depth === 3) {
       config = { ...config, depth: body.depth };
+    }
+    if (typeof body.lang === "string") {
+      config = { ...config, lang: body.lang };
     }
     await saveConfig(CONFIG_PATH, config);
     return reply.status(200).send(config);

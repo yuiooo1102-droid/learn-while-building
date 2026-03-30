@@ -53,6 +53,7 @@ export type ExerciseFeedback = {
 export type LwbConfig = {
   readonly model: string;
   readonly depth: DepthLevel;
+  readonly lang: string;
 };
 
 export type ClientMessage =

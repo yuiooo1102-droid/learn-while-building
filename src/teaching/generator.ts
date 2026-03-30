@@ -18,6 +18,7 @@ export function buildPrompt(
   knowledge: KnowledgeStore,
   recentSteps: ReadonlyArray<SessionStep>,
   depth: 1 | 2 | 3 = 2,
+  lang: string = "auto",
 ): string {
   const conceptEntries = Object.entries(knowledge.concepts);
   const knowledgeSection =
@@ -57,24 +58,28 @@ export function buildPrompt(
     operationContext = `工具: ${toolName}\n参数: ${JSON.stringify(toolInput, null, 2).slice(0, 800)}`;
   }
 
+  const langInstruction = lang === "auto"
+    ? "使用与用户对话相同的语言（从上下文推断）"
+    : `使用${lang}`;
+
   const depthInstructions: Record<number, string> = {
     1: `规则：
 1. 每个概念用一句话概括
 2. 总共不超过 80 字
-3. 用中文`,
+3. ${langInstruction}`,
     2: `规则：
 1. 重点分析代码内容中的编程概念，不要只说"AI 创建了一个文件"
 2. 已掌握的概念一笔带过，聚焦用户还不会的概念
-3. 未接触的概念用生活化类比详细解释（比如"import 就像从图书馆借一本工具书来用"）
+3. 未接触的概念用生活化类比详细解释
 4. 如果代码包含多个概念，挑最重要的 2-3 个重点讲
 5. explanation 控制在 200 字以内
-6. 用中文`,
+6. ${langInstruction}`,
     3: `规则：
 1. 每个概念都详细展开，多用生活化类比和简化的代码示例
 2. 解释概念之间的关系和联系
 3. 即使是已掌握的概念，也简要提及以建立完整的知识网络
 4. explanation 可以写到 400 字
-5. 用中文`,
+5. ${langInstruction}`,
   };
 
   return `你是一个编程教师，正在向一个非程序员实时解释 AI 编程助手写的代码和操作。
@@ -110,8 +115,9 @@ export async function generateTeaching(
   recentSteps: ReadonlyArray<SessionStep>,
   model: string = "claude-sonnet-4-6",
   depth: 1 | 2 | 3 = 2,
+  lang: string = "auto",
 ): Promise<TeachingContent> {
-  const prompt = buildPrompt(event, knowledge, recentSteps, depth);
+  const prompt = buildPrompt(event, knowledge, recentSteps, depth, lang);
 
   const response = await client.messages.create({
     model,
