@@ -1,13 +1,23 @@
 // tests/integration.test.ts
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { rm } from "node:fs/promises";
+import { join } from "node:path";
+import { homedir } from "node:os";
 import { createServer } from "../src/server/index.js";
 import type { FastifyInstance } from "fastify";
+
+const CONFIG_PATH = join(homedir(), ".learn-while-building", "config.json");
 
 describe("Server integration", () => {
   let app: FastifyInstance;
 
+  beforeEach(async () => {
+    await rm(CONFIG_PATH, { force: true });
+  });
+
   afterEach(async () => {
     if (app) await app.close();
+    await rm(CONFIG_PATH, { force: true });
   });
 
   it("health check returns ok", async () => {
