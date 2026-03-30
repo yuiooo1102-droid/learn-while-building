@@ -59,4 +59,53 @@ describe("Server integration", () => {
 
     expect(response.statusCode).toBe(200);
   });
+
+  it("returns 400 for manual trigger with no context", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/exercise/trigger",
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("returns default config", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/config",
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.model).toBe("claude-sonnet-4-6");
+  });
+
+  it("updates config model", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/config",
+      payload: { model: "claude-haiku-4-5-20251001" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().model).toBe("claude-haiku-4-5-20251001");
+
+    const getResponse = await app.inject({
+      method: "GET",
+      url: "/config",
+    });
+    expect(getResponse.json().model).toBe("claude-haiku-4-5-20251001");
+  });
 });
