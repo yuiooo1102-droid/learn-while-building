@@ -16,15 +16,22 @@ switch (command) {
     break;
   }
 
+  case "review": {
+    await import("../src/watch/review-cli.js");
+    break;
+  }
+
   default: {
-    console.log(`Learn While Building v0.1.0
+    console.log(`Learn While Building v0.3.0
 
 Usage:
   lwb serve    Start the teaching server
   lwb watch    Start the teaching display client
+  lwb review   Browse past teaching content (offline)
 
 The server receives events from Claude Code hooks and generates
-teaching content. The watch client displays it in your terminal.`);
+teaching content. The watch client displays it in your terminal.
+Review mode works offline without API key.`);
     break;
   }
 }
