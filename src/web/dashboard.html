@@ -538,10 +538,141 @@ footer {
 }
 .classify-btn:hover { background: var(--accent); }
 
+/* Archive cards */
+.archive-card { opacity: 0.7; }
+.archive-card:hover { opacity: 0.9; }
+.archive-label {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* Search bar */
+.search-bar {
+  padding: 12px 24px 0;
+  flex-shrink: 0;
+}
+.search-input {
+  width: 100%;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px 8px 32px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-wrap {
+  position: relative;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search-kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  pointer-events: none;
+}
+
+/* Today summary */
+.today-summary {
+  display: flex;
+  gap: 16px;
+  padding: 8px 24px;
+  background: var(--accent-glow);
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  align-items: center;
+  flex-shrink: 0;
+}
+.today-summary .today-label {
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+.today-stat { display: flex; align-items: center; gap: 4px; }
+.today-stat .num { color: var(--text); font-family: var(--font-mono); font-weight: 600; }
+.today-hidden { display: none; }
+
+/* Mobile sidebar toggle */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 48px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: background 0.15s;
+}
+.sidebar-toggle:hover { background: var(--accent); }
+
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
   main { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+  .sidebar {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    border-left: none;
+  }
+  .sidebar.mobile-open { display: flex; }
+  .sidebar-toggle { display: flex; }
+  .sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 16px;
+  }
+  .sidebar-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+}
+@media (min-width: 769px) {
+  .sidebar-close { display: none; }
 }
 </style>
 </head>
@@ -559,6 +690,19 @@ footer {
 
 <main>
   <div class="feed-wrapper" style="display:flex;flex-direction:column;overflow:hidden">
+    <div class="today-summary today-hidden" id="todaySummary">
+      <span class="today-label">Today</span>
+      <span class="today-stat"><span class="num" id="todayLearned">0</span> learned</span>
+      <span class="today-stat"><span class="num" id="todayNew">0</span> new</span>
+      <span class="today-stat"><span class="num" id="todayExercises">0</span> exercises</span>
+    </div>
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search concepts or topics..." oninput="filterFeed(this.value)">
+        <span class="search-kbd">/</span>
+      </div>
+    </div>
     <div class="loading-bar" id="loadingBar">
       <div class="spinner"></div>
       <span id="loadingText">Generating...</span>
@@ -571,13 +715,16 @@ footer {
           As Claude Code writes code in your project, explanations of programming concepts will appear here in real time.
         </div>
         <div style="font-size:0.75rem;color:var(--text-muted);margin-top:16px;font-family:var(--font-mono)">
-          Run <span style="color:var(--accent)">/learn start</span> in Claude Code to begin
+          Run <span style="color:var(--accent)">/learn:start</span> in Claude Code to begin
         </div>
       </div>
     </div>
   </div>
 
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-close">
+      <button class="sidebar-close-btn" onclick="closeSidebar()">×</button>
+    </div>
     <div class="tree-section">
       <div class="section-label">Skill Tree</div>
       <div class="classify-banner" id="classifyBanner">
@@ -630,6 +777,8 @@ footer {
   </div>
 </div>
 
+<button class="sidebar-toggle" id="sidebarToggle" onclick="openSidebar()">☰</button>
+
 <footer>
   <div class="footer-status">
     <span id="footerStatus">Connecting...</span>
@@ -668,9 +817,9 @@ const originalTitle = document.title;
 
 function handleMessage(msg) {
   switch (msg.type) {
-    case 'teaching': addTeachingCard(msg); hideLoading(); notifyTab(); break;
+    case 'teaching': addTeachingCard(msg); hideLoading(); notifyTab(); updateTodaySummary(); break;
     case 'exercise': addExerciseCard(msg); hideLoading(); notifyTab(); break;
-    case 'feedback': addFeedbackCard(msg); hideLoading(); break;
+    case 'feedback': addFeedbackCard(msg); hideLoading(); todayExerciseCount++; updateTodaySummary(); break;
     case 'loading': showLoading(msg.title); break;
     case 'status': document.getElementById('footerStatus').textContent = msg.message; break;
     case 'skill_tree': renderTree(msg.tree); break;
@@ -973,30 +1122,33 @@ async function loadInitialData() {
     const kRes = await fetch('/api/knowledge');
     updateStats(await kRes.json());
   } catch {}
+  updateTodaySummary();
 }
 
 async function loadRecentFeed() {
   try {
-    const res = await fetch('/api/archive');
-    const data = await res.json();
-    const entries = (data.entries || []).slice(-10).reverse(); // Last 10, newest first
+    const [archiveRes, kRes] = await Promise.all([fetch('/api/archive'), fetch('/api/knowledge')]);
+    const data = await archiveRes.json();
+    const kData = await kRes.json();
+    const concepts = kData.concepts || {};
+    const entries = (data.entries || []).slice(-10).reverse();
     if (entries.length === 0) return;
     document.getElementById('emptyState')?.remove();
     const feed = document.getElementById('feed');
     for (const entry of entries) {
       const card = document.createElement('div');
-      card.className = 'card';
+      card.className = 'card archive-card';
       const t = entry.timestamp ? new Date(entry.timestamp) : new Date();
       card.innerHTML = `
         <div class="card-title">${esc(entry.title)}</div>
         <div class="card-body">${esc(entry.explanation)}</div>
         ${entry.reasoning ? `<div class="card-reasoning">${esc(entry.reasoning)}</div>` : ''}
-        ${(entry.concepts || []).length > 0 ? `<div class="card-concepts">${entry.concepts.map(c =>
-          `<span class="concept-tag" data-level="1" onclick="openConceptModal('${esc(c)}')">${esc(c)}</span>`
-        ).join('')}</div>` : ''}
-        <div class="card-time" data-time="${t.getTime()}">${timeAgo(t)}</div>
+        ${(entry.concepts || []).length > 0 ? `<div class="card-concepts">${entry.concepts.map(c => {
+          const level = concepts[c]?.level ?? 0;
+          return `<span class="concept-tag" data-level="${level}" onclick="openConceptModal('${esc(c)}')" title="${levelLabel(level)}">${esc(c)}</span>`;
+        }).join('')}</div>` : ''}
+        <div class="card-time" data-time="${t.getTime()}">${timeAgo(t)} <span class="archive-label">from archive</span></div>
       `;
-      card.style.opacity = '0.7'; // Slightly dimmed to distinguish from live content
       feed.appendChild(card);
     }
   } catch {}
@@ -1015,7 +1167,60 @@ function levelLabel(l) { return ['New', 'Seen', 'Understood', 'Mastered'][l] || 
 function levelColor(l) { return [getComputedStyle(document.documentElement).getPropertyValue('--gray').trim(), 'var(--yellow)', 'var(--blue)', 'var(--green)'][l] || 'var(--gray)'; }
 function progressColor(p) { return p >= 75 ? 'var(--green)' : p >= 40 ? 'var(--yellow)' : 'var(--accent-dim)'; }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+// ═══ Search / Filter ═══
+function filterFeed(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('#feed .card');
+  for (const card of cards) {
+    if (!q) { card.style.display = ''; continue; }
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(q) ? '' : 'none';
+  }
+}
+
+// ═══ Mobile Sidebar ═══
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('mobile-open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+}
+
+// ═══ Today's Summary ═══
+let todayExerciseCount = 0;
+async function updateTodaySummary() {
+  try {
+    const [archiveRes, kRes] = await Promise.all([fetch('/api/archive'), fetch('/api/knowledge')]);
+    const archive = await archiveRes.json();
+    const knowledge = await kRes.json();
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const todayEntries = (archive.entries || []).filter(e => e.timestamp && new Date(e.timestamp) >= todayStart);
+    const todayConcepts = new Set();
+    const newConcepts = new Set();
+    for (const entry of todayEntries) {
+      for (const c of (entry.concepts || [])) {
+        todayConcepts.add(c);
+        const state = knowledge.concepts?.[c];
+        if (state && state.encounters <= 1) newConcepts.add(c);
+      }
+    }
+    const summary = document.getElementById('todaySummary');
+    if (todayConcepts.size > 0 || todayExerciseCount > 0) {
+      summary.classList.remove('today-hidden');
+      document.getElementById('todayLearned').textContent = todayConcepts.size;
+      document.getElementById('todayNew').textContent = newConcepts.size;
+      document.getElementById('todayExercises').textContent = todayExerciseCount;
+    }
+  } catch {}
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeSidebar(); }
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
 
 // Update relative timestamps every 30s
 setInterval(() => {
