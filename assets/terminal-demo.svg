@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="340" viewBox="0 0 680 340">
+  <defs>
+    <style>
+      .bg { fill: #1a1b26; }
+      .bar { fill: #24253a; }
+      .dot-r { fill: #ff5f57; }
+      .dot-y { fill: #febc2e; }
+      .dot-g { fill: #28c840; }
+      .title { fill: #787c99; font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px; }
+      .text { fill: #c0caf5; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .dim { fill: #565f89; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .accent { fill: #d4a054; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .green { fill: #9ece6a; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .blue { fill: #7aa2f7; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .purple { fill: #bb9af7; font-family: 'SF Mono', 'Consolas', monospace; font-size: 13px; }
+      .card { fill: #24253a; rx: 6; }
+      .card-border { fill: none; stroke: #d4a054; stroke-width: 2; rx: 6; }
+      .tag-bg { fill: rgba(212,160,84,0.2); rx: 3; }
+      .tag { fill: #d4a054; font-family: 'SF Mono', 'Consolas', monospace; font-size: 10px; }
+      .header { fill: #c0caf5; font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 14px; font-weight: bold; }
+      .body { fill: #9aa5ce; font-family: 'Georgia', serif; font-size: 12.5px; }
+      .small { fill: #565f89; font-family: 'SF Mono', 'Consolas', monospace; font-size: 10px; }
+    </style>
+  </defs>
+  <!-- Window -->
+  <rect class="bg" width="680" height="340" rx="10"/>
+  <rect class="bar" width="680" height="36" rx="10"/>
+  <rect class="bar" y="26" width="680" height="10"/>
+  <circle class="dot-r" cx="20" cy="18" r="6"/>
+  <circle class="dot-y" cx="40" cy="18" r="6"/>
+  <circle class="dot-g" cx="60" cy="18" r="6"/>
+  <text class="title" x="340" y="22" text-anchor="middle">Learn While Building — Dashboard</text>
+
+  <!-- Header bar -->
+  <rect fill="#1f2030" x="0" y="36" width="680" height="28"/>
+  <circle fill="#28c840" cx="18" cy="50" r="4"/>
+  <text class="dim" x="28" y="54" style="font-size:11px">Learn While Building</text>
+  <text class="dim" x="560" y="54" style="font-size:11px">12/3 mastered</text>
+
+  <!-- Card 1 (latest, with accent border) -->
+  <rect class="card" x="16" y="76" width="440" height="110" rx="6"/>
+  <rect x="16" y="76" width="3" height="110" fill="#d4a054" rx="1"/>
+  <text class="header" x="30" y="98">Async/Await Pattern</text>
+  <text class="body" x="30" y="118">When code needs to wait for something (like fetching</text>
+  <text class="body" x="30" y="134">data from the internet), async/await lets it pause</text>
+  <text class="body" x="30" y="150">politely without blocking everything else...</text>
+  <!-- Tags -->
+  <rect fill="#332a1a" x="30" y="160" width="60" height="18" rx="3"/>
+  <text class="accent" x="38" y="173" style="font-size:10px">async</text>
+  <rect fill="#1a2a33" x="96" y="160" width="65" height="18" rx="3"/>
+  <text class="blue" x="104" y="173" style="font-size:10px">promise</text>
+  <rect fill="#1a331a" x="167" y="160" width="48" height="18" rx="3"/>
+  <text class="green" x="175" y="173" style="font-size:10px">fetch</text>
+
+  <!-- Card 2 (older, dimmer) -->
+  <rect class="card" x="16" y="198" width="440" height="80" rx="6" opacity="0.7"/>
+  <text class="header" x="30" y="220" opacity="0.8">Destructuring Assignment</text>
+  <text class="body" x="30" y="240" opacity="0.7">Pull specific values out of an object or array in</text>
+  <text class="body" x="30" y="256" opacity="0.7">one line — like unpacking a suitcase...</text>
+
+  <!-- Sidebar: Skill Tree -->
+  <rect fill="#1f2030" x="468" y="64" width="212" height="276" rx="0"/>
+  <text class="dim" x="484" y="88" style="font-size:10px; letter-spacing:1px">SKILL TREE</text>
+
+  <!-- Domain: Programming Basics -->
+  <text class="text" x="484" y="112" style="font-size:12px">Programming Basics</text>
+  <rect fill="#333" x="484" y="118" width="100" height="4" rx="2"/>
+  <rect fill="#9ece6a" x="484" y="118" width="68" height="4" rx="2"/>
+  <text class="dim" x="590" y="124" style="font-size:10px">68%</text>
+
+  <!-- Domain: Web Development -->
+  <text class="text" x="484" y="148" style="font-size:12px">Web Development</text>
+  <rect fill="#333" x="484" y="154" width="100" height="4" rx="2"/>
+  <rect fill="#d4a054" x="484" y="154" width="42" height="4" rx="2"/>
+  <text class="dim" x="590" y="160" style="font-size:10px">42%</text>
+
+  <!-- Domain: DevOps -->
+  <text class="text" x="484" y="184" style="font-size:12px">DevOps</text>
+  <rect fill="#333" x="484" y="190" width="100" height="4" rx="2"/>
+  <rect fill="#7aa2f7" x="484" y="190" width="25" height="4" rx="2"/>
+  <text class="dim" x="590" y="196" style="font-size:10px">25%</text>
+
+  <!-- Settings -->
+  <rect fill="#1a1b26" x="468" y="280" width="212" height="60"/>
+  <text class="dim" x="484" y="300" style="font-size:10px; letter-spacing:1px">SETTINGS</text>
+  <text class="dim" x="484" y="320" style="font-size:11px">Depth</text>
+  <rect fill="#24253a" x="536" y="308" width="22" height="18" rx="3" stroke="#565f89" stroke-width="1"/>
+  <text class="dim" x="543" y="321" style="font-size:10px">1</text>
+  <rect fill="#d4a054" x="562" y="308" width="22" height="18" rx="3"/>
+  <text class="text" x="569" y="321" style="font-size:10px">2</text>
+  <rect fill="#24253a" x="588" y="308" width="22" height="18" rx="3" stroke="#565f89" stroke-width="1"/>
+  <text class="dim" x="595" y="321" style="font-size:10px">3</text>
+
+  <!-- Footer -->
+  <text class="small" x="20" y="330">Connected</text>
+  <text class="small" x="630" y="330">v0.5</text>
+</svg>
