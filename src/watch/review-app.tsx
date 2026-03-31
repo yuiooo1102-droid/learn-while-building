@@ -1,73 +1,87 @@
 import React, { useState, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
-import TextInput from "ink-text-input";
-import type { ArchiveEntry } from "../types.js";
+import type { ArchiveEntry, SkillTreeNode } from "../types.js";
 import { loadArchive, filterByConcept } from "../teaching/archive.js";
+import { loadConceptMap } from "../teaching/concept-map.js";
+import { loadKnowledge } from "../teaching/knowledge.js";
+import { buildSkillTree } from "../teaching/skill-tree.js";
+import TreeView from "./tree-view.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const ARCHIVE_PATH = join(homedir(), ".learn-while-building", "archive.jsonl");
+const LWB_DIR = join(homedir(), ".learn-while-building");
+
+type ReviewState = "tree" | "detail";
 
 export default function ReviewApp() {
-  const [allEntries, setAllEntries] = useState<ReadonlyArray<ArchiveEntry>>([]);
-  const [filtered, setFiltered] = useState<ReadonlyArray<ArchiveEntry>>([]);
-  const [filterText, setFilterText] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [tree, setTree] = useState<ReadonlyArray<SkillTreeNode>>([]);
+  const [archive, setArchive] = useState<ReadonlyArray<ArchiveEntry>>([]);
+  const [state, setState] = useState<ReviewState>("tree");
+  const [selectedConcept, setSelectedConcept] = useState<string>("");
+  const [detailIndex, setDetailIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    loadArchive(ARCHIVE_PATH).then((entries) => {
-      const reversed = [...entries].reverse();
-      setAllEntries(reversed);
-      setFiltered(reversed);
+    Promise.all([
+      loadConceptMap(join(LWB_DIR, "concept-map.json")),
+      loadKnowledge(join(LWB_DIR, "knowledge.json")),
+      loadArchive(join(LWB_DIR, "archive.jsonl")),
+    ]).then(([conceptMap, knowledge, entries]) => {
+      setTree(buildSkillTree(conceptMap, knowledge));
+      setArchive(entries);
       setLoaded(true);
     });
   }, []);
 
   useInput((input, key) => {
-    if (key.upArrow && currentIndex > 0) setCurrentIndex((i) => i - 1);
-    if (key.downArrow && currentIndex < filtered.length - 1) setCurrentIndex((i) => i + 1);
+    if (state !== "detail") return;
+    const filtered = filterByConcept(archive, selectedConcept);
+    if (key.upArrow && detailIndex > 0) setDetailIndex(i => i - 1);
+    if (key.downArrow && detailIndex < filtered.length - 1) setDetailIndex(i => i + 1);
+    if (key.escape || input === "q") { setState("tree"); setDetailIndex(0); }
   });
 
-  const handleFilterSubmit = (text: string) => {
-    if (text.trim() === "") { setFiltered(allEntries); }
-    else { setFiltered(filterByConcept([...allEntries], text.trim())); }
-    setCurrentIndex(0);
+  const handleSelectConcept = (conceptName: string) => {
+    setSelectedConcept(conceptName);
+    setDetailIndex(0);
+    setState("detail");
   };
 
   if (!loaded) return <Box paddingX={1}><Text color="yellow">Loading...</Text></Box>;
-  if (allEntries.length === 0) return (
-    <Box flexDirection="column" paddingX={1}>
-      <Text bold>📚 Review Mode</Text>
-      <Text color="gray">No learning records yet. Start with /learn start and teaching content will be archived automatically.</Text>
-    </Box>
-  );
 
-  const entry = filtered[currentIndex];
+  if (state === "tree") {
+    return tree.length > 0
+      ? <TreeView tree={tree} onDismiss={() => process.exit(0)} onSelectConcept={handleSelectConcept} />
+      : (
+        <Box flexDirection="column" paddingX={1}>
+          <Text bold>📚 Review Mode</Text>
+          <Text color="gray">No learning records yet. Start with /learn start.</Text>
+        </Box>
+      );
+  }
+
+  const filtered = filterByConcept(archive, selectedConcept);
+  const entry = filtered[detailIndex];
+
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
       <Box justifyContent="space-between">
-        <Text bold>📚 Review Mode</Text>
-        <Text color="gray">{currentIndex + 1} / {filtered.length}</Text>
+        <Text bold>📖 {selectedConcept}</Text>
+        <Text color="gray">{filtered.length > 0 ? `${detailIndex + 1} / ${filtered.length}` : "0 / 0"}</Text>
       </Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
-      <Box marginTop={1}>
-        <Text>Filter by concept: </Text>
-        <TextInput value={filterText} onChange={setFilterText} onSubmit={handleFilterSubmit} placeholder="enter concept name, press Enter to filter, empty Enter to clear" />
-      </Box>
       {entry ? (
         <Box flexDirection="column" marginTop={1}>
-          <Text bold>📖 {entry.title}</Text>
+          <Text bold>{entry.title}</Text>
           <Text color="gray">{entry.timestamp.slice(0, 16)} | {entry.project.split("/").pop()}</Text>
           <Box marginTop={1}><Text>{entry.explanation}</Text></Box>
           {entry.reasoning && <Box marginTop={1}><Text color="gray">💡 {entry.reasoning}</Text></Box>}
-          <Box marginTop={1}><Text color="gray">Concepts: {entry.concepts.join(", ")}</Text></Box>
         </Box>
       ) : (
-        <Box marginTop={1}><Text color="gray">No matching records</Text></Box>
+        <Box marginTop={1}><Text color="gray">No records for this concept</Text></Box>
       )}
-      <Box marginTop={1}><Text color="gray">↑↓ navigate | Ctrl+C exit</Text></Box>
+      <Box marginTop={1}><Text color="gray">↑↓ navigate | q back to tree</Text></Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
     </Box>
   );

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Box, Text, useInput } from "ink";
-import type { WatchMessage, TeachingContent, Exercise, ExerciseFeedback, KnowledgeStore } from "../types.js";
+import type { WatchMessage, TeachingContent, Exercise, ExerciseFeedback, KnowledgeStore, SkillTreeNode } from "../types.js";
+import TreeView from "./tree-view.js";
 import TeachingView from "./teaching-view.js";
 import { ExerciseView, FeedbackView } from "./exercise-view.js";
 import StatusView from "./status-view.js";
 import ResetView from "./reset-view.js";
 
-type AppState = "teaching" | "exercise" | "feedback" | "status" | "confirm_reset";
+type AppState = "teaching" | "exercise" | "feedback" | "status" | "confirm_reset" | "tree";
 type Props = { readonly port: number };
 
 const MAX_HISTORY = 50;
@@ -42,6 +43,8 @@ export default function App({ port }: Props) {
   const [knowledgeData, setKnowledgeData] = useState<KnowledgeStore | null>(null);
   const [status, setStatus] = useState<string>("Connecting...");
   const [loading, setLoading] = useState<string | null>(null);
+  const [skillTree, setSkillTree] = useState<ReadonlyArray<SkillTreeNode>>([]);
+  const [conceptCount, setConceptCount] = useState(0);
   const [inputValue, setInputValue] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
   const spinner = useSpinner(loading !== null);
@@ -76,6 +79,7 @@ export default function App({ port }: Props) {
         else if (msg.type === "status") { setStatus(msg.message); }
         else if (msg.type === "knowledge_status") { setKnowledgeData(msg.data); setAppState("status"); }
         else if (msg.type === "confirm_reset") { setInputValue(""); setAppState("confirm_reset"); }
+        else if (msg.type === "skill_tree") { setSkillTree(msg.tree); setAppState("tree"); }
       } catch {}
     };
     ws.onerror = () => { setConnected(false); setStatus("Connection failed. Make sure teaching server is running (lwb serve)"); };
@@ -128,6 +132,8 @@ export default function App({ port }: Props) {
     setAppState("teaching");
   }, []);
 
+  const handleTreeDismiss = useCallback(() => { setAppState("teaching"); }, []);
+
   const handleStatusDismiss = useCallback(() => {
     if (wsRef.current) wsRef.current.send(JSON.stringify({ type: "dismiss" }));
     setAppState("teaching");
@@ -177,6 +183,7 @@ export default function App({ port }: Props) {
 
       {/* Main content area — always show content, even while loading */}
       {appState === "status" && knowledgeData && !loading && <StatusView data={knowledgeData} onDismiss={handleStatusDismiss} />}
+      {!loading && appState === "tree" && <TreeView tree={skillTree} onDismiss={handleTreeDismiss} />}
       {appState === "confirm_reset" && !loading && <ResetView inputValue={inputValue} onInputChange={setInputValue} onSubmit={handleResetSubmit} />}
       {appState === "exercise" && exercise && !loading && <ExerciseView exercise={exercise} inputValue={inputValue} onInputChange={setInputValue} onSubmit={handleExerciseSubmit} />}
       {appState === "feedback" && feedback && !loading && <FeedbackView feedback={feedback} />}
