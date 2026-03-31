@@ -49,7 +49,13 @@ You are activating the real-time teaching mode for a non-programmer user.
    }
    ```
 
-5. Confirm to the user:
+5. Activate this session so only its events show in the teaching panel:
+   ```bash
+   curl -s -X POST http://127.0.0.1:3579/session/activate -H 'Content-Type: application/json' -d "{\"session_id\": \"$CLAUDE_SESSION_ID\"}"
+   ```
+   Note: If `$CLAUDE_SESSION_ID` is not available, use any unique identifier for this session.
+
+6. Confirm to the user:
    > Teaching mode started! As I code, the right panel will explain each step in real time.
 
 ### /learn stop

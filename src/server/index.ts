@@ -29,6 +29,7 @@ export async function createServer() {
   let config = await loadConfig(CONFIG_PATH);
   const debouncer = createDebouncer<HookEvent>(300);
   let lastEvent: HookEvent | null = null;
+  let activeSessionId: string | null = null;
   const recentEvents: HookEvent[] = [];
 
   function broadcast(message: WatchMessage) {
@@ -56,6 +57,11 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   // Process event: for simple ops use template, for complex ops request Claude to teach
   function processEvent(event: HookEvent): string | null {
     const toolInput = event.tool_input as Record<string, unknown>;
+
+    // Ignore events from non-active sessions
+    if (activeSessionId && event.session_id !== activeSessionId) {
+      return null;
+    }
 
     // Only teach for code-related tools
     const CODE_TOOLS = ["Write", "Edit", "MultiEdit", "Bash"];
@@ -220,6 +226,16 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     });
 
     socket.on("close", () => { clients.delete(socket); });
+  });
+
+  // Session activation — only events from active session are processed
+  app.post("/session/activate", async (request, reply) => {
+    const body = request.body as Record<string, unknown>;
+    if (typeof body.session_id === "string") {
+      activeSessionId = body.session_id;
+      broadcast({ type: "status", message: `Session activated: ${activeSessionId.slice(0, 8)}...` });
+    }
+    return reply.status(200).send({ activeSessionId });
   });
 
   // Event log for monitoring
