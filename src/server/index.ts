@@ -58,6 +58,11 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   function processEvent(event: HookEvent): string | null {
     const toolInput = event.tool_input as Record<string, unknown>;
 
+    // No watch clients connected — skip teaching to save tokens
+    if (clients.size === 0) {
+      return null;
+    }
+
     // Ignore events from non-active sessions
     if (activeSessionId && event.session_id !== activeSessionId) {
       return null;
