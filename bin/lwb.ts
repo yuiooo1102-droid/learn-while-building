@@ -21,17 +21,22 @@ switch (command) {
     break;
   }
 
+  case "setup": {
+    const { setup } = await import("../src/setup/index.js");
+    await setup();
+    break;
+  }
+
   default: {
     console.log(`Learn While Building v0.3.0
 
 Usage:
+  lwb setup    First-time setup (install skill + optional StatusLine)
   lwb serve    Start the teaching server
   lwb watch    Start the teaching display client
   lwb review   Browse past teaching content (offline)
 
-The server receives events from Claude Code hooks and generates
-teaching content. The watch client displays it in your terminal.
-Review mode works offline without API key.`);
+Get started: run 'lwb setup' first, then use /learn start in Claude Code.`);
     break;
   }
 }
