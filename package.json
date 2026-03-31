@@ -4,7 +4,7 @@
   "description": "Real-time teaching companion for Claude Code — learn programming while AI builds your project",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/web dist/src/web",
     "test": "vitest run"
   },
   "engines": {
