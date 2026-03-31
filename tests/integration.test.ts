@@ -181,4 +181,45 @@ describe("Server integration", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().depth).toBe(2);
   });
+
+  it("returns goal presets", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const response = await app.inject({ method: "GET", url: "/goals" });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("sets goal via POST /goal", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const response = await app.inject({
+      method: "POST", url: "/goal",
+      payload: { goal: "Fix bugs independently" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().goal).toBe("Fix bugs independently");
+  });
+
+  it("broadcasts skill tree on POST /tree", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const response = await app.inject({ method: "POST", url: "/tree" });
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("sets project type via POST /path", async () => {
+    const server = await createServer();
+    app = server.app;
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const response = await app.inject({
+      method: "POST", url: "/path",
+      payload: { projectType: "web-frontend" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json().projectType).toBe("web-frontend");
+  });
 });
