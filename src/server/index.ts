@@ -248,6 +248,20 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     return reply.status(200).send({ activeSessionId });
   });
 
+  // Compact status for StatusLine integration
+  app.get("/statusline", async () => {
+    const conceptCount = Object.keys(knowledge.concepts).length;
+    const watcherCount = clients.size;
+    const mastered = Object.values(knowledge.concepts).filter(c => c.level >= 3).length;
+    return {
+      text: `📖 ${conceptCount} concepts (${mastered} mastered) | ${watcherCount > 0 ? "🟢" : "⚪"}`,
+      active: watcherCount > 0,
+      concepts: conceptCount,
+      mastered,
+      watchers: watcherCount,
+    };
+  });
+
   // Event log for monitoring
   app.get("/events", async () => recentEvents.map((e) => ({
     tool: e.tool_name,
