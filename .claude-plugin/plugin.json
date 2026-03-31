@@ -6,5 +6,6 @@
     "name": "wh"
   },
   "license": "MIT",
-  "keywords": ["teaching", "learning", "real-time", "beginner"]
+  "keywords": ["teaching", "learning", "real-time", "beginner"],
+  "skills": "./.claude/skills"
 }
