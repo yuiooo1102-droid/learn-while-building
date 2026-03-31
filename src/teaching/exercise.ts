@@ -1,75 +1,75 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { HookEvent, KnowledgeStore, SessionStep, Exercise, ExerciseFeedback, ConceptLevel } from "../types.js";
 
-const LEVEL_LABELS: Record<number, string> = { 0: "未接触", 1: "见过", 2: "理解", 3: "已掌握" };
+const LEVEL_LABELS: Record<number, string> = { 0: "not seen", 1: "seen", 2: "understood", 3: "mastered" };
 
 export function buildExercisePrompt(event: HookEvent, knowledge: KnowledgeStore, recentSteps: ReadonlyArray<SessionStep>): string {
   const conceptEntries = Object.entries(knowledge.concepts);
   const knowledgeSection = conceptEntries.length > 0
-    ? conceptEntries.map(([name, state]) => `- ${name}: ${LEVEL_LABELS[state.level]} (遇到${state.encounters}次)`).join("\n")
-    : "- (暂无学习记录)";
+    ? conceptEntries.map(([name, state]) => `- ${name}: ${LEVEL_LABELS[state.level]} (seen ${state.encounters} times)`).join("\n")
+    : "- (no learning records yet)";
   const stepsSection = recentSteps.length > 0
     ? recentSteps.map((s) => `- [${s.toolName}] ${s.summary}`).join("\n")
-    : "- (这是第一步)";
+    : "- (this is the first step)";
   const inputStr = JSON.stringify(event.tool_input, null, 2).slice(0, 500);
 
-  return `你是一个编程教师，需要根据 AI 编程助手刚才的操作，出一道练习题来帮助非程序员学习。
+  return `You are a programming teacher. Based on what the AI coding assistant just did, create an exercise question to help a non-programmer learn.
 
-当前用户知识状态：
+Current user knowledge state:
 ${knowledgeSection}
 
-刚才 AI 执行了以下操作：
-- 工具: ${event.tool_name}
-- 参数: ${inputStr}
+The AI just performed the following action:
+- Tool: ${event.tool_name}
+- Input: ${inputStr}
 
-最近几步上下文：
+Recent context steps:
 ${stepsSection}
 
-请根据用户的知识水平自行决定题目类型和难度。可以出选择题、预测题、修改题等。
+Choose the question type and difficulty based on the user's knowledge level. You may use multiple-choice, prediction, or fill-in-the-blank questions.
 
-严格按以下 JSON 格式输出（不要输出其他内容）：
+Output strictly in the following JSON format (no other text):
 {
-  "question": "题目内容",
-  "options": ["选项A", "选项B", "选项C"],
-  "hint": "可选提示"
+  "question": "question text",
+  "options": ["Option A", "Option B", "Option C"],
+  "hint": "optional hint"
 }
 
-规则：
-1. options 字段可选，开放式问题可以不提供
-2. hint 字段可选
-3. 题目要与刚才的操作相关
-4. 难度匹配用户当前水平
-5. 用中文`;
+Rules:
+1. options is optional — omit for open-ended questions
+2. hint is optional
+3. The question must relate to the action just performed
+4. Match difficulty to the user's current level
+5. Use English`;
 }
 
 export function buildJudgePrompt(exercise: Exercise, userAnswer: string, event: HookEvent): string {
   const optionsStr = exercise.options
     ? exercise.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`).join("\n")
-    : "(开放式问题)";
+    : "(open-ended question)";
 
-  return `你是一个编程教师，正在评判非程序员学生的练习答案。
+  return `You are a programming teacher evaluating a non-programmer student's exercise answer.
 
-题目：${exercise.question}
-选项：
+Question: ${exercise.question}
+Options:
 ${optionsStr}
 
-学生的回答：${userAnswer}
+Student's answer: ${userAnswer}
 
-相关操作上下文：
-- 工具: ${event.tool_name}
-- 参数: ${JSON.stringify(event.tool_input, null, 2).slice(0, 300)}
+Related action context:
+- Tool: ${event.tool_name}
+- Input: ${JSON.stringify(event.tool_input, null, 2).slice(0, 300)}
 
-请评判并严格按以下 JSON 格式输出（不要输出其他内容）：
+Evaluate and output strictly in the following JSON format (no other text):
 {
-  "correct": true或false,
-  "explanation": "解释为什么对或错，用通俗易懂的语言",
-  "conceptUpdates": [{"name": "概念英文名", "newLevel": 0到3的数字}]
+  "correct": true or false,
+  "explanation": "explain why the answer is right or wrong in plain language",
+  "conceptUpdates": [{"name": "concept-name-in-english", "newLevel": number from 0 to 3}]
 }
 
-conceptUpdates 规则：
-- 回答正确且理解深入：提升相关概念 level
-- 回答错误：降低或保持相关概念 level
-- newLevel: 0=未接触, 1=见过, 2=理解, 3=已掌握`;
+conceptUpdates rules:
+- Correct answer with deep understanding: increase the related concept level
+- Wrong answer: decrease or keep the related concept level
+- newLevel: 0=not seen, 1=seen, 2=understood, 3=mastered`;
 }
 
 export async function generateExercise(client: Anthropic, event: HookEvent, knowledge: KnowledgeStore, recentSteps: ReadonlyArray<SessionStep>, model: string): Promise<Exercise> {
@@ -86,7 +86,7 @@ export async function generateExercise(client: Anthropic, event: HookEvent, know
       hint: typeof parsed.hint === "string" ? parsed.hint : undefined,
     };
   } catch {
-    return { type: "exercise", question: "刚才 AI 做了什么操作？用你自己的话描述一下。" };
+    return { type: "exercise", question: "What did the AI just do? Describe it in your own words." };
   }
 }
 
@@ -106,6 +106,6 @@ export async function judgeAnswer(client: Anthropic, exercise: Exercise, userAns
         : [],
     };
   } catch {
-    return { type: "feedback", correct: false, explanation: "无法评判答案，请继续学习。", conceptUpdates: [] };
+    return { type: "feedback", correct: false, explanation: "Unable to evaluate the answer, please keep learning.", conceptUpdates: [] };
   }
 }

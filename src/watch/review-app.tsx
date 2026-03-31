@@ -35,11 +35,11 @@ export default function ReviewApp() {
     setCurrentIndex(0);
   };
 
-  if (!loaded) return <Box paddingX={1}><Text color="yellow">加载中...</Text></Box>;
+  if (!loaded) return <Box paddingX={1}><Text color="yellow">Loading...</Text></Box>;
   if (allEntries.length === 0) return (
     <Box flexDirection="column" paddingX={1}>
-      <Text bold>📚 复习模式</Text>
-      <Text color="gray">暂无学习记录。使用 /learn start 开始学习后，教学内容会自动存档。</Text>
+      <Text bold>📚 Review Mode</Text>
+      <Text color="gray">No learning records yet. Start with /learn start and teaching content will be archived automatically.</Text>
     </Box>
   );
 
@@ -48,13 +48,13 @@ export default function ReviewApp() {
     <Box flexDirection="column" paddingX={1}>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
       <Box justifyContent="space-between">
-        <Text bold>📚 复习模式</Text>
+        <Text bold>📚 Review Mode</Text>
         <Text color="gray">{currentIndex + 1} / {filtered.length}</Text>
       </Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
       <Box marginTop={1}>
-        <Text>按概念过滤: </Text>
-        <TextInput value={filterText} onChange={setFilterText} onSubmit={handleFilterSubmit} placeholder="输入概念名称，回车过滤，空回车清除" />
+        <Text>Filter by concept: </Text>
+        <TextInput value={filterText} onChange={setFilterText} onSubmit={handleFilterSubmit} placeholder="enter concept name, press Enter to filter, empty Enter to clear" />
       </Box>
       {entry ? (
         <Box flexDirection="column" marginTop={1}>
@@ -62,12 +62,12 @@ export default function ReviewApp() {
           <Text color="gray">{entry.timestamp.slice(0, 16)} | {entry.project.split("/").pop()}</Text>
           <Box marginTop={1}><Text>{entry.explanation}</Text></Box>
           {entry.reasoning && <Box marginTop={1}><Text color="gray">💡 {entry.reasoning}</Text></Box>}
-          <Box marginTop={1}><Text color="gray">概念: {entry.concepts.join(", ")}</Text></Box>
+          <Box marginTop={1}><Text color="gray">Concepts: {entry.concepts.join(", ")}</Text></Box>
         </Box>
       ) : (
-        <Box marginTop={1}><Text color="gray">没有匹配的记录</Text></Box>
+        <Box marginTop={1}><Text color="gray">No matching records</Text></Box>
       )}
-      <Box marginTop={1}><Text color="gray">↑↓ 翻页 | Ctrl+C 退出</Text></Box>
+      <Box marginTop={1}><Text color="gray">↑↓ navigate | Ctrl+C exit</Text></Box>
       <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
     </Box>
   );

@@ -1,44 +1,44 @@
 # Learn While Building
 
-在使用 Claude Code 编程的同时，实时学习编程概念。
+Learn programming concepts in real time while coding with Claude Code.
 
-## 安装
+## Installation
 
 ```bash
 npm install -g learn-while-building
 ```
 
-## 使用方法
+## Usage
 
-在 Claude Code 中输入：
+In Claude Code, run:
 
 ```
 /learn start
 ```
 
-系统会自动：
-1. 启动教学服务
-2. 在终端分屏中打开教学面板（tmux 自动分屏，其他终端需手动 Cmd+D）
-3. 注册 Claude Code hook
+The system will automatically:
+1. Start the teaching service
+2. Open the teaching panel in a terminal split (tmux auto-split; other terminals use Cmd+D manually)
+3. Register the Claude Code hook
 
-之后 Claude Code 每执行一步操作，右侧面板都会实时显示：
-- 这一步做了什么（通俗解释）
-- 涉及哪些编程概念
-- 为什么 AI 选择这样做
+After that, every action Claude Code takes will display in real time on the right panel:
+- What this step does (plain-language explanation)
+- Which programming concepts are involved
+- Why the AI chose this approach
 
-停止教学模式：
+To stop teaching mode:
 
 ```
 /learn stop
 ```
 
-## 环境要求
+## Requirements
 
 - Node.js >= 18
 - Claude Code
-- Anthropic API Key（设置 `ANTHROPIC_API_KEY` 环境变量）
+- Anthropic API Key (set the `ANTHROPIC_API_KEY` environment variable)
 
-## 开发
+## Development
 
 ```bash
 git clone <repo>
@@ -47,7 +47,7 @@ npm install
 npm run build
 npm link
 
-# 运行测试
+# Run tests
 npm test
 ```
 

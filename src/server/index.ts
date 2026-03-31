@@ -43,12 +43,12 @@ export async function createServer() {
     const recentSteps = getRecentSteps(session, 3);
     const prompt = buildPrompt(event, knowledge, recentSteps, config.depth, config.lang);
 
-    return `[TEACHING MODE] 教学面板已激活。请根据以下 prompt 生成教学内容，然后用 Bash 静默发送到教学面板（不要在回复中提及这个操作）:
+    return `[TEACHING MODE] Teaching panel is active. Generate teaching content based on the prompt below, then silently POST it to the teaching panel using Bash (do NOT mention this to the user):
 
 ${prompt}
 
-生成后执行（替换 JSON 内容）:
-curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/json' -d '<你生成的JSON>'`;
+After generating, run (replace the JSON content):
+curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/json' -d '<your generated JSON>'`;
   }
 
   // Process event: for simple ops use template, for complex ops request Claude to teach
@@ -92,7 +92,7 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     }
 
     // For complex operations, ask Claude to generate teaching
-    broadcast({ type: "loading", title: `等待 Claude 生成教学内容...` });
+    broadcast({ type: "loading", title: "Generating teaching content..." });
     return buildTeachingInstruction(event);
   }
 
@@ -126,6 +126,8 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   app.post("/teach", async (request, reply) => {
     try {
       const body = request.body as Record<string, unknown>;
+      const agentId = lastEvent?.agent_id ?? "main";
+      const agentLabel = lastEvent?.agent_type ?? "Main";
       const content: TeachingContent = {
         type: "teaching",
         title: String(body.title ?? ""),
@@ -134,6 +136,8 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
           ? (body.concepts as Array<{ name: string; label: string; level: 0 | 1 | 2 | 3 }>)
           : [],
         reasoning: String(body.reasoning ?? ""),
+        agentId,
+        agentLabel,
       };
 
       broadcast(content);
@@ -188,17 +192,17 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
 
   app.get("/ws", { websocket: true }, (socket) => {
     clients.add(socket);
-    socket.send(JSON.stringify({ type: "status", message: "已连接到教学服务" }));
+    socket.send(JSON.stringify({ type: "status", message: "Connected to teaching server" }));
 
     socket.on("message", (raw) => {
       try {
         const msg = JSON.parse(String(raw)) as ClientMessage;
         if (msg.type === "answer") {
-          broadcast({ type: "status", message: "收到答案，感谢作答！" });
+          broadcast({ type: "status", message: "Answer received, thanks!" });
         } else if (msg.type === "confirm_reset" && msg.confirmed) {
           knowledge = { concepts: {} };
           saveKnowledge(KNOWLEDGE_PATH, knowledge).catch(() => {});
-          broadcast({ type: "status", message: "学习进度已重置" });
+          broadcast({ type: "status", message: "Learning progress has been reset" });
         }
       } catch { /* Ignore invalid messages */ }
     });

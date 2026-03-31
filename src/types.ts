@@ -7,6 +7,8 @@ export type HookEvent = {
   readonly tool_use_id: string;
   readonly cwd: string;
   readonly timestamp?: string;
+  readonly agent_id?: string;
+  readonly agent_type?: string;
 };
 
 export type ConceptLevel = 0 | 1 | 2 | 3;
@@ -31,6 +33,8 @@ export type TeachingContent = {
     readonly level: ConceptLevel;
   }>;
   readonly reasoning: string;
+  readonly agentId?: string;
+  readonly agentLabel?: string;
 };
 
 export type Exercise = {

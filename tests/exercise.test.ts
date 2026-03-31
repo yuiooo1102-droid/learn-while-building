@@ -37,13 +37,13 @@ describe("buildJudgePrompt", () => {
 describe("generateExercise", () => {
   it("calls LLM and returns parsed exercise", async () => {
     const mockCreate = vi.fn().mockResolvedValue({
-      content: [{ type: "text", text: JSON.stringify({ question: "变量 x 的值是什么？", options: ["1", "2", "undefined"], hint: "看看赋值语句" }) }],
+      content: [{ type: "text", text: JSON.stringify({ question: "What is the value of variable x?", options: ["1", "2", "undefined"], hint: "Look at the assignment statement" }) }],
     });
     const mockClient = { messages: { create: mockCreate } };
 
     const result = await generateExercise(mockClient as any, MOCK_EVENT, MOCK_KNOWLEDGE, MOCK_STEPS, "claude-sonnet-4-6");
     expect(result.type).toBe("exercise");
-    expect(result.question).toBe("变量 x 的值是什么？");
+    expect(result.question).toBe("What is the value of variable x?");
     expect(result.options).toHaveLength(3);
     expect(mockCreate.mock.calls[0][0].model).toBe("claude-sonnet-4-6");
   });
@@ -52,10 +52,10 @@ describe("generateExercise", () => {
 describe("judgeAnswer", () => {
   it("calls LLM and returns feedback with concept updates", async () => {
     const mockCreate = vi.fn().mockResolvedValue({
-      content: [{ type: "text", text: JSON.stringify({ correct: true, explanation: "没错！", conceptUpdates: [{ name: "variable", newLevel: 2 }] }) }],
+      content: [{ type: "text", text: JSON.stringify({ correct: true, explanation: "Correct!", conceptUpdates: [{ name: "variable", newLevel: 2 }] }) }],
     });
     const mockClient = { messages: { create: mockCreate } };
-    const exercise = { type: "exercise" as const, question: "变量 x 的值是什么？", options: ["1", "2", "undefined"] };
+    const exercise = { type: "exercise" as const, question: "What is the value of variable x?", options: ["1", "2", "undefined"] };
 
     const result = await judgeAnswer(mockClient as any, exercise, "1", MOCK_EVENT, "claude-sonnet-4-6");
     expect(result.type).toBe("feedback");

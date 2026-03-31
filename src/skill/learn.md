@@ -25,7 +25,7 @@ You are activating the real-time teaching mode for a non-programmer user.
    - If inside tmux (`$TMUX` is set): run `tmux split-window -h "lwb watch"`
    - If inside Ghostty (`$GHOSTTY_RESOURCES_DIR` is set on macOS): the server handles auto-split
    - Otherwise: tell the user:
-     > 请手动分屏（Warp 按 Cmd+D，Ghostty 按 Cmd+D），然后在新 pane 运行：
+     > Please split your terminal (Warp: Cmd+D, Ghostty: Cmd+D), then run in the new pane:
      > ```
      > lwb watch
      > ```
@@ -50,7 +50,7 @@ You are activating the real-time teaching mode for a non-programmer user.
    ```
 
 5. Confirm to the user:
-   > 教学模式已启动！我在编码的同时，右侧面板会实时解释每一步操作。
+   > Teaching mode started! As I code, the right panel will explain each step in real time.
 
 ### /learn stop
 
@@ -59,7 +59,7 @@ You are activating the real-time teaching mode for a non-programmer user.
    ```bash
    curl -s -X POST http://127.0.0.1:3579/shutdown 2>/dev/null
    ```
-3. Confirm: 教学模式已关闭。
+3. Confirm: Teaching mode stopped.
 
 ### /learn try
 
@@ -67,7 +67,7 @@ Manually trigger an exercise question:
 ```bash
 curl -s -X POST http://127.0.0.1:3579/exercise/trigger
 ```
-Then tell the user: 已在教学面板中生成一道练习题，请在右侧 pane 作答。
+Then tell the user: An exercise has been generated in the teaching panel — answer it in the right pane.
 
 ### /learn model <model-id>
 
@@ -75,7 +75,7 @@ Switch the LLM model used for teaching and exercises:
 ```bash
 curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json' -d '{"model": "<model-id>"}'
 ```
-Then confirm: 已切换模型为 <model-id>。
+Then confirm: Model switched to <model-id>.
 
 ### /learn depth <1|2|3>
 
@@ -83,7 +83,7 @@ Set teaching detail level (1=brief, 2=moderate, 3=detailed):
 ```bash
 curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json' -d '{"depth": <number>}'
 ```
-Then confirm: 已设置教学深度为 <number>。
+Then confirm: Teaching depth set to <number>.
 
 ### /learn lang <language>
 
@@ -100,7 +100,7 @@ Show knowledge progress in the teaching pane:
 ```bash
 curl -s -X POST http://127.0.0.1:3579/status
 ```
-Then tell the user: 学习进度已显示在右侧面板。
+Then tell the user: Learning progress is now displayed in the right panel.
 
 ### /learn reset
 
@@ -108,7 +108,7 @@ Reset all learning progress (requires confirmation in teaching pane):
 ```bash
 curl -s -X POST http://127.0.0.1:3579/reset
 ```
-Then tell the user: 请在右侧面板确认是否重置。
+Then tell the user: Please confirm the reset in the right panel.
 
 ## Teaching Content Generation
 

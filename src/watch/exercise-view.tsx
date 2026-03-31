@@ -30,7 +30,7 @@ export function ExerciseView({ exercise, inputValue, onInputChange, onSubmit }: 
       )}
 
       {exercise.hint && (
-        <Box marginTop={1}><Text color="gray">💡 提示: {exercise.hint}</Text></Box>
+        <Box marginTop={1}><Text color="gray">💡 Hint: {exercise.hint}</Text></Box>
       )}
 
       <Box marginTop={1}>

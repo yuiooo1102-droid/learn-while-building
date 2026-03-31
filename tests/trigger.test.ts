@@ -6,7 +6,7 @@ import type { KnowledgeStore } from "../src/types.js";
 describe("shouldTriggerExercise", () => {
   it("triggers when a new concept appears (level 0)", () => {
     const knowledge: KnowledgeStore = { concepts: {} };
-    const teachingConcepts = [{ name: "async", label: "异步", level: 1 as const }];
+    const teachingConcepts = [{ name: "async", label: "Async", level: 1 as const }];
     expect(shouldTriggerExercise(knowledge, teachingConcepts, false)).toBe(true);
   });
 
@@ -22,7 +22,7 @@ describe("shouldTriggerExercise", () => {
     const knowledge: KnowledgeStore = {
       concepts: { variable: { level: 3, encounters: 20, lastSeen: "2026-03-30" } },
     };
-    const teachingConcepts = [{ name: "variable", label: "变量", level: 3 as const }];
+    const teachingConcepts = [{ name: "variable", label: "Variable", level: 3 as const }];
     expect(shouldTriggerExercise(knowledge, teachingConcepts, false)).toBe(false);
   });
 
@@ -30,13 +30,13 @@ describe("shouldTriggerExercise", () => {
     const knowledge: KnowledgeStore = {
       concepts: { loop: { level: 1, encounters: 2, lastSeen: "2026-03-30" } },
     };
-    const teachingConcepts = [{ name: "loop", label: "循环", level: 1 as const }];
+    const teachingConcepts = [{ name: "loop", label: "Loop", level: 1 as const }];
     expect(shouldTriggerExercise(knowledge, teachingConcepts, false)).toBe(false);
   });
 
   it("does not trigger when teaching used a static template", () => {
     const knowledge: KnowledgeStore = { concepts: {} };
-    const teachingConcepts = [{ name: "terminal_command", label: "终端命令", level: 1 as const }];
+    const teachingConcepts = [{ name: "terminal_command", label: "Terminal Command", level: 1 as const }];
     expect(shouldTriggerExercise(knowledge, teachingConcepts, true)).toBe(false);
   });
 
