@@ -8,6 +8,9 @@ import { hasTemplate, getTemplate } from "../teaching/templates.js";
 import { buildPrompt } from "../teaching/generator.js";
 import { loadKnowledge, saveKnowledge, updateConcept } from "../teaching/knowledge.js";
 import { loadConfig, saveConfig } from "../teaching/config.js";
+import { loadConceptMap, saveConceptMap, insertConcept } from "../teaching/concept-map.js";
+import { buildSkillTree } from "../teaching/skill-tree.js";
+import { GOAL_PRESETS } from "../teaching/goals.js";
 import { appendArchive } from "../teaching/archive.js";
 import { createSession, addStep, getRecentSteps } from "../teaching/session.js";
 import { homedir } from "node:os";
@@ -17,6 +20,7 @@ const LWB_DIR = join(homedir(), ".learn-while-building");
 const KNOWLEDGE_PATH = join(LWB_DIR, "knowledge.json");
 const CONFIG_PATH = join(LWB_DIR, "config.json");
 const ARCHIVE_PATH = join(LWB_DIR, "archive.jsonl");
+const CONCEPT_MAP_PATH = join(LWB_DIR, "concept-map.json");
 const PORT = 3579;
 
 export async function createServer() {
@@ -32,6 +36,7 @@ export async function createServer() {
   let activeSessionId: string | null = null;
   let codeEventCount = 0;
   const recentEvents: HookEvent[] = [];
+  let conceptMap = await loadConceptMap(CONCEPT_MAP_PATH);
 
   function broadcast(message: WatchMessage) {
     const data = JSON.stringify(message);
@@ -174,6 +179,17 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
 
       broadcast(content);
 
+      // Save concept mappings from teaching content
+      for (const concept of content.concepts) {
+        if (concept.domain && concept.category) {
+          const updated = insertConcept(conceptMap, concept.name, concept.domain, concept.category);
+          if (updated !== conceptMap) {
+            conceptMap = updated;
+            saveConceptMap(CONCEPT_MAP_PATH, conceptMap).catch(() => {});
+          }
+        }
+      }
+
       // Archive teaching content for offline review
       appendArchive(ARCHIVE_PATH, {
         timestamp: new Date().toISOString(),
@@ -216,6 +232,12 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     if (typeof body.lang === "string") {
       config = { ...config, lang: body.lang };
     }
+    if (typeof body.goal === "string") {
+      config = { ...config, goal: body.goal };
+    }
+    if (typeof body.projectType === "string") {
+      config = { ...config, projectType: body.projectType };
+    }
     await saveConfig(CONFIG_PATH, config);
     return reply.status(200).send(config);
   });
@@ -230,6 +252,34 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
   app.post("/reset", async (_request, reply) => {
     broadcast({ type: "confirm_reset" });
     return reply.status(200).send();
+  });
+
+  // Skill tree
+  app.post("/tree", async (_request, reply) => {
+    const tree = buildSkillTree(conceptMap, knowledge);
+    broadcast({ type: "skill_tree", tree });
+    return reply.status(200).send();
+  });
+
+  // Goals
+  app.get("/goals", async () => GOAL_PRESETS);
+
+  app.post("/goal", async (request, reply) => {
+    const body = request.body as Record<string, unknown>;
+    if (typeof body.goal === "string") {
+      config = { ...config, goal: body.goal };
+      await saveConfig(CONFIG_PATH, config);
+    }
+    return reply.status(200).send(config);
+  });
+
+  app.post("/path", async (request, reply) => {
+    const body = request.body as Record<string, unknown>;
+    if (typeof body.projectType === "string") {
+      config = { ...config, projectType: body.projectType };
+      await saveConfig(CONFIG_PATH, config);
+    }
+    return reply.status(200).send(config);
   });
 
   app.get("/ws", { websocket: true }, (socket) => {
