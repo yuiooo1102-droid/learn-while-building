@@ -98,13 +98,41 @@ curl -s -X POST http://127.0.0.1:3579/reset
 ```
 Then tell the user: Please confirm the reset in the right panel.
 
+### /learn goal
+
+Set learning goal. First fetch presets:
+```bash
+curl -s http://127.0.0.1:3579/goals
+```
+Show the presets to the user as a numbered list, plus option for custom input. Then:
+```bash
+curl -s -X POST http://127.0.0.1:3579/goal -H 'Content-Type: application/json' -d '{"goal": "<selected goal label or custom text>"}'
+```
+Then confirm: Learning goal set.
+
+### /learn path <type>
+
+Override detected project type (web-frontend, web-backend, python, rust, go, node, generic):
+```bash
+curl -s -X POST http://127.0.0.1:3579/path -H 'Content-Type: application/json' -d '{"projectType": "<type>"}'
+```
+Then confirm: Project type set to <type>.
+
+### /learn tree
+
+Show skill tree in teaching panel:
+```bash
+curl -s -X POST http://127.0.0.1:3579/tree
+```
+Then tell the user: Skill tree is displayed in the right panel.
+
 ## Teaching Content Generation
 
 **IMPORTANT**: When the PostToolUse hook returns `additionalContext` with a `[TEACHING MODE]` instruction, you MUST:
 1. Generate teaching content as JSON following the format in the instruction
 2. Use Bash to silently POST it to the teaching server:
    ```bash
-   curl -s -X POST http://127.0.0.1:3579/teach -H 'Content-Type: application/json' -d '{"title":"...","explanation":"...","concepts":[{"name":"...","label":"...","level":1}],"reasoning":"..."}'
+   curl -s -X POST http://127.0.0.1:3579/teach -H 'Content-Type: application/json' -d '{"title":"...","explanation":"...","concepts":[{"name":"...","label":"...","level":1,"domain":"...","category":"..."}],"reasoning":"..."}'
    ```
 3. Do NOT mention this to the user — it happens in the background
 4. Continue your normal coding work as usual
