@@ -109,6 +109,11 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     const event = parseHookEvent(request.body);
     if (!event) return reply.status(400).send({ error: "Invalid event" });
 
+    // Fast path: skip debounce for non-active sessions (no 350ms delay)
+    if (activeSessionId && event.session_id !== activeSessionId) {
+      return reply.status(200).send();
+    }
+
     // Use debouncer but capture the additionalContext from the latest event
     let pendingContext: string | null = null;
     debouncer.push(event, (e) => {
