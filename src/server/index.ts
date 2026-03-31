@@ -13,8 +13,10 @@ import { buildSkillTree } from "../teaching/skill-tree.js";
 import { GOAL_PRESETS } from "../teaching/goals.js";
 import { appendArchive } from "../teaching/archive.js";
 import { createSession, addStep, getRecentSteps } from "../teaching/session.js";
+import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const LWB_DIR = join(homedir(), ".learn-while-building");
 const KNOWLEDGE_PATH = join(LWB_DIR, "knowledge.json");
@@ -339,6 +341,148 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     input: e.tool_input,
     time: e.timestamp,
   })));
+
+  // ═══ Browser Dashboard ═══
+  app.get("/", async (_request, reply) => {
+    try {
+      const thisDir = dirname(fileURLToPath(import.meta.url));
+      const htmlPath = join(thisDir, "..", "web", "dashboard.html");
+      const html = await readFile(htmlPath, "utf-8");
+      return reply.type("text/html").send(html);
+    } catch {
+      // Fallback: try from src directory (dev mode)
+      try {
+        const htmlPath = join(process.cwd(), "src", "web", "dashboard.html");
+        const html = await readFile(htmlPath, "utf-8");
+        return reply.type("text/html").send(html);
+      } catch {
+        return reply.status(404).send("Dashboard not found");
+      }
+    }
+  });
+
+  // API: skill tree data
+  app.get("/api/tree", async () => ({
+    tree: buildSkillTree(conceptMap, knowledge),
+  }));
+
+  // API: archive entries with optional concept filter
+  app.get("/api/archive", async (request) => {
+    const url = new URL(request.url, `http://${request.hostname}`);
+    const concept = url.searchParams.get("concept");
+    const { loadArchive, filterByConcept } = await import("../teaching/archive.js");
+    const entries = await loadArchive(ARCHIVE_PATH);
+    return {
+      entries: concept ? filterByConcept(entries, concept) : entries,
+    };
+  });
+
+  // API: knowledge data
+  app.get("/api/knowledge", async () => knowledge);
+
+  // API: classify unmapped concepts with keyword-based defaults
+  app.post("/api/classify", async (_request, reply) => {
+    const KEYWORD_MAP: Record<string, { domain: string; category: string }> = {
+      variable: { domain: "Programming Basics", category: "Variables" },
+      const: { domain: "Programming Basics", category: "Variables" },
+      let: { domain: "Programming Basics", category: "Variables" },
+      function: { domain: "Programming Basics", category: "Functions" },
+      arrow: { domain: "Programming Basics", category: "Functions" },
+      param: { domain: "Programming Basics", category: "Functions" },
+      loop: { domain: "Programming Basics", category: "Control Flow" },
+      condition: { domain: "Programming Basics", category: "Control Flow" },
+      if: { domain: "Programming Basics", category: "Control Flow" },
+      switch: { domain: "Programming Basics", category: "Control Flow" },
+      import: { domain: "Programming Basics", category: "Modules" },
+      export: { domain: "Programming Basics", category: "Modules" },
+      module: { domain: "Programming Basics", category: "Modules" },
+      type: { domain: "Programming Basics", category: "Type System" },
+      interface: { domain: "Programming Basics", category: "Type System" },
+      generic: { domain: "Programming Basics", category: "Type System" },
+      class: { domain: "Programming Basics", category: "OOP" },
+      object: { domain: "Programming Basics", category: "Data Structures" },
+      array: { domain: "Programming Basics", category: "Data Structures" },
+      map: { domain: "Programming Basics", category: "Data Structures" },
+      set: { domain: "Programming Basics", category: "Data Structures" },
+      string: { domain: "Programming Basics", category: "Data Types" },
+      number: { domain: "Programming Basics", category: "Data Types" },
+      json: { domain: "Programming Basics", category: "Data Types" },
+      async: { domain: "Programming Basics", category: "Async" },
+      await: { domain: "Programming Basics", category: "Async" },
+      promise: { domain: "Programming Basics", category: "Async" },
+      callback: { domain: "Programming Basics", category: "Async" },
+      error: { domain: "Programming Basics", category: "Error Handling" },
+      try: { domain: "Programming Basics", category: "Error Handling" },
+      catch: { domain: "Programming Basics", category: "Error Handling" },
+      throw: { domain: "Programming Basics", category: "Error Handling" },
+      http: { domain: "Web Development", category: "HTTP" },
+      request: { domain: "Web Development", category: "HTTP" },
+      response: { domain: "Web Development", category: "HTTP" },
+      api: { domain: "Web Development", category: "API" },
+      rest: { domain: "Web Development", category: "API" },
+      endpoint: { domain: "Web Development", category: "API" },
+      route: { domain: "Web Development", category: "API" },
+      html: { domain: "Web Development", category: "Frontend" },
+      css: { domain: "Web Development", category: "Frontend" },
+      dom: { domain: "Web Development", category: "Frontend" },
+      react: { domain: "Web Development", category: "Frontend" },
+      component: { domain: "Web Development", category: "Frontend" },
+      database: { domain: "Web Development", category: "Database" },
+      query: { domain: "Web Development", category: "Database" },
+      sql: { domain: "Web Development", category: "Database" },
+      git: { domain: "DevOps", category: "Version Control" },
+      commit: { domain: "DevOps", category: "Version Control" },
+      branch: { domain: "DevOps", category: "Version Control" },
+      push: { domain: "DevOps", category: "Version Control" },
+      npm: { domain: "DevOps", category: "Package Management" },
+      package: { domain: "DevOps", category: "Package Management" },
+      test: { domain: "Testing", category: "Testing" },
+      assert: { domain: "Testing", category: "Testing" },
+      mock: { domain: "Testing", category: "Testing" },
+      terminal: { domain: "Tools", category: "Terminal" },
+      command: { domain: "Tools", category: "Terminal" },
+      pipe: { domain: "Tools", category: "Terminal" },
+      file: { domain: "Tools", category: "File System" },
+      path: { domain: "Tools", category: "File System" },
+      read: { domain: "Tools", category: "File System" },
+      write: { domain: "Tools", category: "File System" },
+      regex: { domain: "Tools", category: "Text Processing" },
+      pattern: { domain: "Tools", category: "Text Processing" },
+      debug: { domain: "Debugging", category: "Debugging" },
+      log: { domain: "Debugging", category: "Debugging" },
+      websocket: { domain: "Web Development", category: "Real-time" },
+      socket: { domain: "Web Development", category: "Real-time" },
+      event: { domain: "Programming Basics", category: "Events" },
+      listener: { domain: "Programming Basics", category: "Events" },
+      observer: { domain: "Design Patterns", category: "Patterns" },
+      factory: { domain: "Design Patterns", category: "Patterns" },
+      singleton: { domain: "Design Patterns", category: "Patterns" },
+      decorator: { domain: "Design Patterns", category: "Patterns" },
+    };
+
+    let classified = 0;
+    for (const conceptName of Object.keys(knowledge.concepts)) {
+      if (conceptMap.concepts[conceptName]) continue;
+      const lower = conceptName.toLowerCase().replace(/_/g, " ");
+      let matched = false;
+      for (const [keyword, mapping] of Object.entries(KEYWORD_MAP)) {
+        if (lower.includes(keyword)) {
+          conceptMap = insertConcept(conceptMap, conceptName, mapping.domain, mapping.category);
+          classified++;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        conceptMap = insertConcept(conceptMap, conceptName, "Other", "Uncategorized");
+        classified++;
+      }
+    }
+    if (classified > 0) {
+      await saveConceptMap(CONCEPT_MAP_PATH, conceptMap);
+    }
+    return reply.status(200).send({ classified });
+  });
 
   app.get("/health", async () => ({ status: "ok" }));
 

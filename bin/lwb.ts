@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 // bin/lwb.ts
 import { argv } from "node:process";
+import { execSync } from "node:child_process";
+import { platform } from "node:os";
 
 const command = argv[2];
+
+function openBrowser(url: string) {
+  try {
+    const cmd = platform() === "darwin" ? "open" : platform() === "win32" ? "start" : "xdg-open";
+    execSync(`${cmd} ${url}`, { stdio: "ignore" });
+  } catch {
+    console.log(`Open in browser: ${url}`);
+  }
+}
 
 switch (command) {
   case "serve": {
@@ -12,12 +23,24 @@ switch (command) {
   }
 
   case "watch": {
-    await import("../src/watch/cli.js");
+    if (argv.includes("--terminal")) {
+      await import("../src/watch/cli.js");
+    } else {
+      const url = "http://localhost:3579";
+      console.log(`Opening dashboard: ${url}`);
+      openBrowser(url);
+    }
     break;
   }
 
   case "review": {
-    await import("../src/watch/review-cli.js");
+    if (argv.includes("--terminal")) {
+      await import("../src/watch/review-cli.js");
+    } else {
+      const url = "http://localhost:3579";
+      console.log(`Opening dashboard: ${url}`);
+      openBrowser(url);
+    }
     break;
   }
 
@@ -28,15 +51,16 @@ switch (command) {
   }
 
   default: {
-    console.log(`Learn While Building v0.3.0
+    console.log(`Learn While Building v0.4.0
 
 Usage:
-  lwb setup    First-time setup (install skill + optional StatusLine)
-  lwb serve    Start the teaching server
-  lwb watch    Start the teaching display client
-  lwb review   Browse past teaching content (offline)
+  lwb setup            First-time setup (install skill + optional StatusLine)
+  lwb serve            Start the teaching server
+  lwb watch            Open dashboard in browser (--terminal for Ink client)
+  lwb review           Open dashboard in browser (--terminal for Ink client)
 
-Get started: run 'lwb setup' first, then use /learn start in Claude Code.`);
+Get started: run 'lwb setup' first, then use /learn start in Claude Code.
+Dashboard: http://localhost:3579`);
     break;
   }
 }
