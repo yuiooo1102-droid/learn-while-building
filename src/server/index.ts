@@ -2,7 +2,7 @@
 import Fastify from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import type { WebSocket } from "ws";
-import type { HookEvent, WatchMessage, TeachingContent, ClientMessage } from "../types.js";
+import type { HookEvent, WatchMessage, TeachingContent, ClientMessage, Exercise, ExerciseFeedback, ConceptLevel } from "../types.js";
 import { parseHookEvent, createDebouncer } from "./hook-handler.js";
 import { hasTemplate, getTemplate } from "../teaching/templates.js";
 import { buildPrompt } from "../teaching/generator.js";
@@ -39,6 +39,7 @@ export async function createServer() {
   let codeEventCount = 0;
   const recentEvents: HookEvent[] = [];
   let conceptMap = await loadConceptMap(CONCEPT_MAP_PATH);
+  let pendingExercise: Exercise | null = null;
 
   function broadcast(message: WatchMessage) {
     const data = JSON.stringify(message);
@@ -221,6 +222,24 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     }
   });
 
+  // Receive exercise from Claude Code
+  app.post("/exercise", async (request, reply) => {
+    try {
+      const body = request.body as Record<string, unknown>;
+      const exercise: Exercise = {
+        type: "exercise",
+        question: String(body.question ?? ""),
+        options: Array.isArray(body.options) ? body.options.map(String) : undefined,
+        hint: typeof body.hint === "string" ? body.hint : undefined,
+      };
+      pendingExercise = exercise;
+      broadcast(exercise);
+      return reply.status(200).send({ ok: true });
+    } catch (err) {
+      return reply.status(400).send({ error: String(err) });
+    }
+  });
+
   app.get("/config", async () => config);
 
   app.post("/config", async (request, reply) => {
@@ -291,8 +310,47 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     socket.on("message", (raw) => {
       try {
         const msg = JSON.parse(String(raw)) as ClientMessage;
-        if (msg.type === "answer") {
-          broadcast({ type: "status", message: "Answer received, thanks!" });
+        if (msg.type === "answer" && pendingExercise) {
+          const answer = msg.answer;
+          const exercise = pendingExercise;
+          pendingExercise = null;
+          // Simple local evaluation for multiple-choice
+          if (exercise.options && exercise.options.length > 0) {
+            const normalized = answer.trim().toUpperCase();
+            // Accept letter (A/B/C) or full text match
+            const selectedIndex = normalized.length === 1 ? normalized.charCodeAt(0) - 65 : -1;
+            const matchedOption = selectedIndex >= 0 && selectedIndex < exercise.options.length;
+            if (matchedOption) {
+              const feedback: ExerciseFeedback = {
+                type: "feedback",
+                correct: true,
+                explanation: `You selected: ${exercise.options[selectedIndex]}. Answer recorded — keep learning!`,
+                conceptUpdates: [],
+              };
+              broadcast(feedback);
+            } else {
+              const feedback: ExerciseFeedback = {
+                type: "feedback",
+                correct: false,
+                explanation: `Your answer "${answer}" didn't match any option. Try answering with A, B, or C.`,
+                conceptUpdates: [],
+              };
+              broadcast(feedback);
+            }
+          } else {
+            // Open-ended: accept any non-empty answer as engagement
+            const feedback: ExerciseFeedback = {
+              type: "feedback",
+              correct: answer.trim().length > 10,
+              explanation: answer.trim().length > 10
+                ? "Great effort! Your explanation shows engagement with the concept."
+                : "Try to explain in more detail — a good answer is usually more than a few words.",
+              conceptUpdates: [],
+            };
+            broadcast(feedback);
+          }
+        } else if (msg.type === "answer") {
+          broadcast({ type: "status", message: "No active exercise — wait for the next one!" });
         } else if (msg.type === "confirm_reset" && msg.confirmed) {
           knowledge = { concepts: {} };
           saveKnowledge(KNOWLEDGE_PATH, knowledge).catch(() => {});
@@ -344,21 +402,22 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
 
   // ═══ Browser Dashboard ═══
   app.get("/", async (_request, reply) => {
-    try {
-      const thisDir = dirname(fileURLToPath(import.meta.url));
-      const htmlPath = join(thisDir, "..", "web", "dashboard.html");
-      const html = await readFile(htmlPath, "utf-8");
-      return reply.type("text/html").send(html);
-    } catch {
-      // Fallback: try from src directory (dev mode)
+    const searchPaths = [
+      // Plugin mode: LWB_PLUGIN_ROOT/dist/src/web/dashboard.html
+      process.env.LWB_PLUGIN_ROOT ? join(process.env.LWB_PLUGIN_ROOT, "dist", "src", "web", "dashboard.html") : "",
+      // Compiled mode: relative to this file
+      join(dirname(fileURLToPath(import.meta.url)), "..", "web", "dashboard.html"),
+      // Dev mode: from cwd
+      join(process.cwd(), "src", "web", "dashboard.html"),
+    ].filter(Boolean);
+
+    for (const htmlPath of searchPaths) {
       try {
-        const htmlPath = join(process.cwd(), "src", "web", "dashboard.html");
         const html = await readFile(htmlPath, "utf-8");
         return reply.type("text/html").send(html);
-      } catch {
-        return reply.status(404).send("Dashboard not found");
-      }
+      } catch { continue; }
     }
+    return reply.status(404).send("Dashboard not found");
   });
 
   // API: skill tree data
@@ -494,4 +553,13 @@ export async function startServer() {
   await app.listen({ port, host: "127.0.0.1" });
   console.log(`Learn While Building server running on http://127.0.0.1:${port}`);
   return app;
+}
+
+// Auto-start when run directly (plugin hook spawns this file)
+const isDirectRun = process.argv[1]?.endsWith("server/index.js") || process.argv[1]?.endsWith("server/index.ts");
+if (isDirectRun) {
+  startServer().catch((err) => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  });
 }
