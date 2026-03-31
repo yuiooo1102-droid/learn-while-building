@@ -31,6 +31,8 @@ export type TeachingContent = {
     readonly name: string;
     readonly label: string;
     readonly level: ConceptLevel;
+    readonly domain?: string;
+    readonly category?: string;
   }>;
   readonly reasoning: string;
   readonly agentId?: string;
@@ -58,6 +60,8 @@ export type LwbConfig = {
   readonly model: string;
   readonly depth: DepthLevel;
   readonly lang: string;
+  readonly goal: string;
+  readonly projectType: string;
 };
 
 export type ClientMessage =
@@ -72,7 +76,8 @@ export type WatchMessage =
   | { readonly type: "status"; readonly message: string }
   | { readonly type: "loading"; readonly title: string }
   | { readonly type: "confirm_reset" }
-  | { readonly type: "knowledge_status"; readonly data: KnowledgeStore };
+  | { readonly type: "knowledge_status"; readonly data: KnowledgeStore }
+  | { readonly type: "skill_tree"; readonly tree: ReadonlyArray<SkillTreeNode> };
 
 export type SessionStep = {
   readonly toolName: string;
@@ -89,4 +94,30 @@ export type ArchiveEntry = {
   readonly title: string;
   readonly explanation: string;
   readonly reasoning: string;
+};
+
+export type ConceptMapping = {
+  readonly domain: string;
+  readonly category: string;
+};
+
+export type ConceptMapStore = {
+  readonly concepts: Record<string, ConceptMapping>;
+};
+
+export type SkillTreeNode = {
+  readonly name: string;
+  readonly progress: number;
+  readonly children: ReadonlyArray<SkillTreeNode>;
+  readonly concepts?: ReadonlyArray<{
+    readonly name: string;
+    readonly level: ConceptLevel;
+    readonly encounters: number;
+  }>;
+};
+
+export type GoalPreset = {
+  readonly id: string;
+  readonly label: string;
+  readonly domains: ReadonlyArray<string>;
 };
