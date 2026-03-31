@@ -566,8 +566,13 @@ footer {
     <div class="feed" id="feed">
       <div class="empty" id="emptyState">
         <div class="empty-icon">◇</div>
-        <div>Waiting for teaching content...</div>
-        <div style="font-size:0.78rem">Start coding with Claude Code and learning will appear here</div>
+        <div style="font-size:1rem;color:var(--text-secondary)">Ready to learn</div>
+        <div style="font-size:0.82rem;max-width:320px;text-align:center;line-height:1.6;margin-top:8px">
+          As Claude Code writes code in your project, explanations of programming concepts will appear here in real time.
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:16px;font-family:var(--font-mono)">
+          Run <span style="color:var(--accent)">/learn start</span> in Claude Code to begin
+        </div>
       </div>
     </div>
   </div>
@@ -648,7 +653,8 @@ function connect() {
   };
   ws.onclose = () => {
     document.getElementById('connDot').classList.remove('connected');
-    document.getElementById('footerStatus').textContent = 'Disconnected — reconnecting...';
+    document.getElementById('footerStatus').innerHTML = '<span style="color:var(--red)">● Disconnected</span> — reconnecting in 3s...';
+    hideLoading();
     setTimeout(connect, 3000);
   };
   ws.onerror = () => ws.close();
@@ -657,10 +663,13 @@ function connect() {
   };
 }
 
+let unreadCount = 0;
+const originalTitle = document.title;
+
 function handleMessage(msg) {
   switch (msg.type) {
-    case 'teaching': addTeachingCard(msg); hideLoading(); break;
-    case 'exercise': addExerciseCard(msg); hideLoading(); break;
+    case 'teaching': addTeachingCard(msg); hideLoading(); notifyTab(); break;
+    case 'exercise': addExerciseCard(msg); hideLoading(); notifyTab(); break;
     case 'feedback': addFeedbackCard(msg); hideLoading(); break;
     case 'loading': showLoading(msg.title); break;
     case 'status': document.getElementById('footerStatus').textContent = msg.message; break;
@@ -668,6 +677,20 @@ function handleMessage(msg) {
     case 'knowledge_status': updateStats(msg.data); break;
   }
 }
+
+// Tab notification when content arrives while tab is in background
+function notifyTab() {
+  if (document.hidden) {
+    unreadCount++;
+    document.title = `(${unreadCount}) ${originalTitle}`;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    unreadCount = 0;
+    document.title = originalTitle;
+  }
+});
 
 // ═══ Teaching Feed ═══
 function addTeachingCard(content) {
@@ -731,13 +754,21 @@ function submitAnswer() {
 }
 
 // ═══ Loading ═══
+let loadingTimeout = null;
 function showLoading(text) {
   const bar = document.getElementById('loadingBar');
   document.getElementById('loadingText').textContent = text || 'Generating...';
   bar.classList.add('active');
+  // Auto-clear after 30s if no response arrives
+  if (loadingTimeout) clearTimeout(loadingTimeout);
+  loadingTimeout = setTimeout(() => {
+    hideLoading();
+    document.getElementById('footerStatus').textContent = 'Teaching content timed out — Claude may be busy';
+  }, 30000);
 }
 function hideLoading() {
   document.getElementById('loadingBar').classList.remove('active');
+  if (loadingTimeout) { clearTimeout(loadingTimeout); loadingTimeout = null; }
 }
 
 // ═══ Skill Tree ═══
@@ -937,10 +968,37 @@ async function classifyConcepts() {
 
 // ═══ Init ═══
 async function loadInitialData() {
-  await Promise.all([loadConfig(), loadGoals(), loadTree()]);
+  await Promise.all([loadConfig(), loadGoals(), loadTree(), loadRecentFeed()]);
   try {
     const kRes = await fetch('/api/knowledge');
     updateStats(await kRes.json());
+  } catch {}
+}
+
+async function loadRecentFeed() {
+  try {
+    const res = await fetch('/api/archive');
+    const data = await res.json();
+    const entries = (data.entries || []).slice(-10).reverse(); // Last 10, newest first
+    if (entries.length === 0) return;
+    document.getElementById('emptyState')?.remove();
+    const feed = document.getElementById('feed');
+    for (const entry of entries) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const t = entry.timestamp ? new Date(entry.timestamp) : new Date();
+      card.innerHTML = `
+        <div class="card-title">${esc(entry.title)}</div>
+        <div class="card-body">${esc(entry.explanation)}</div>
+        ${entry.reasoning ? `<div class="card-reasoning">${esc(entry.reasoning)}</div>` : ''}
+        ${(entry.concepts || []).length > 0 ? `<div class="card-concepts">${entry.concepts.map(c =>
+          `<span class="concept-tag" data-level="1" onclick="openConceptModal('${esc(c)}')">${esc(c)}</span>`
+        ).join('')}</div>` : ''}
+        <div class="card-time" data-time="${t.getTime()}">${timeAgo(t)}</div>
+      `;
+      card.style.opacity = '0.7'; // Slightly dimmed to distinguish from live content
+      feed.appendChild(card);
+    }
   } catch {}
 }
 
