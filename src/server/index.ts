@@ -30,6 +30,7 @@ export async function createServer() {
   const debouncer = createDebouncer<HookEvent>(300);
   let lastEvent: HookEvent | null = null;
   let activeSessionId: string | null = null;
+  let codeEventCount = 0;
   const recentEvents: HookEvent[] = [];
 
   function broadcast(message: WatchMessage) {
@@ -85,6 +86,19 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     lastEvent = event;
     recentEvents.push(event);
     if (recentEvents.length > 20) recentEvents.shift();
+    codeEventCount++;
+
+    // Sampling: only teach every N code events (save tokens)
+    const TEACH_INTERVAL = 3;
+    if (codeEventCount % TEACH_INTERVAL !== 1) {
+      // Still record in session for context, but skip teaching
+      session = addStep(session, {
+        toolName: event.tool_name,
+        summary: `${event.tool_name}: ${String(toolInput.file_path ?? toolInput.command ?? "").split("/").pop()}`,
+        timestamp: event.timestamp ?? new Date().toISOString(),
+      });
+      return null;
+    }
 
     // Static template for simple operations
     if (hasTemplate(event.tool_name, toolInput)) {

@@ -20,12 +20,21 @@ export function buildPrompt(
   depth: 1 | 2 | 3 = 2,
   lang: string = "auto",
 ): string {
+  // Only include relevant knowledge: weak concepts (level < 3) and recent ones
+  // This saves ~500 tokens vs dumping the full 200+ concept list
   const conceptEntries = Object.entries(knowledge.concepts);
+  const weakConcepts = conceptEntries
+    .filter(([, state]) => state.level < 3)
+    .sort((a, b) => b[1].encounters - a[1].encounters)
+    .slice(0, 15);
+  const masteredCount = conceptEntries.filter(([, s]) => s.level >= 3).length;
+
   const knowledgeSection =
-    conceptEntries.length > 0
-      ? conceptEntries
-          .map(([name, state]) => `- ${name}: ${LEVEL_LABELS[state.level]}`)
-          .join("\n")
+    weakConcepts.length > 0
+      ? [
+          ...weakConcepts.map(([name, state]) => `- ${name}: ${LEVEL_LABELS[state.level]}`),
+          masteredCount > 0 ? `- (${masteredCount} other concepts already mastered)` : "",
+        ].filter(Boolean).join("\n")
       : "- (no learning history yet)";
 
   const stepsSection =
@@ -41,7 +50,7 @@ export function buildPrompt(
   let operationContext = "";
 
   if (toolName === "Write" || toolName === "MultiEdit") {
-    codeContent = String(toolInput.content ?? "").slice(0, 1500);
+    codeContent = String(toolInput.content ?? "").slice(0, 800);
     operationContext = `Create/write file: ${String(toolInput.file_path ?? "").split("/").pop()}\n\nCode content:\n\`\`\`\n${codeContent}\n\`\`\``;
   } else if (toolName === "Edit") {
     const oldStr = String(toolInput.old_string ?? "").slice(0, 500);
