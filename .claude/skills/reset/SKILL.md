@@ -1,5 +1,7 @@
 ---
+name: reset
 description: Reset all learning progress
+user-invocable: true
 ---
 
 # /learn:reset

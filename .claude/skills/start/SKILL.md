@@ -1,5 +1,7 @@
 ---
+name: start
 description: Start real-time teaching mode — learn programming while AI builds
+user-invocable: true
 ---
 
 # /learn:start

@@ -1,5 +1,8 @@
 ---
+name: set
 description: Configure teaching settings (depth/lang/model/goal/path)
+user-invocable: true
+argument-hint: "<key> [value]"
 ---
 
 # /learn:set <key> [value]

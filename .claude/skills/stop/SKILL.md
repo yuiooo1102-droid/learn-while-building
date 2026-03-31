@@ -1,5 +1,7 @@
 ---
+name: stop
 description: Stop teaching mode
+user-invocable: true
 ---
 
 # /learn:stop

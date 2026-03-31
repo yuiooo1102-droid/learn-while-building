@@ -1,5 +1,7 @@
 ---
+name: status
 description: Show learning progress and skill tree
+user-invocable: true
 ---
 
 # /learn:status

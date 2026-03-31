@@ -1,5 +1,7 @@
 ---
+name: try
 description: Trigger an exercise question
+user-invocable: true
 ---
 
 # /learn:try
