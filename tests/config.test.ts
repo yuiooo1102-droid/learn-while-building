@@ -48,6 +48,14 @@ describe("loadConfig", () => {
     const config = await loadConfig(TEST_PATH);
     expect(config.depth).toBe(3);
   });
+
+  it("returns default goal and projectType when not set", async () => {
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(TEST_PATH, JSON.stringify({ model: "claude-sonnet-4-6" }));
+    const config = await loadConfig(TEST_PATH);
+    expect(config.goal).toBe("");
+    expect(config.projectType).toBe("auto");
+  });
 });
 
 describe("saveConfig", () => {

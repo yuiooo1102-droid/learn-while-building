@@ -6,6 +6,8 @@ export const DEFAULT_CONFIG: LwbConfig = {
   model: "claude-sonnet-4-6",
   depth: 2,
   lang: "auto",
+  goal: "",
+  projectType: "auto",
 };
 
 function isValidDepth(value: unknown): value is DepthLevel {
@@ -20,6 +22,8 @@ export async function loadConfig(filePath: string): Promise<LwbConfig> {
       model: typeof parsed.model === "string" ? parsed.model : DEFAULT_CONFIG.model,
       depth: isValidDepth(parsed.depth) ? parsed.depth : DEFAULT_CONFIG.depth,
       lang: typeof parsed.lang === "string" ? parsed.lang : DEFAULT_CONFIG.lang,
+      goal: typeof parsed.goal === "string" ? parsed.goal : DEFAULT_CONFIG.goal,
+      projectType: typeof parsed.projectType === "string" ? parsed.projectType : DEFAULT_CONFIG.projectType,
     };
   } catch {
     return { ...DEFAULT_CONFIG };
