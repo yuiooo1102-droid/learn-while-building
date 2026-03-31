@@ -248,6 +248,13 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
     return reply.status(200).send({ activeSessionId });
   });
 
+  // Session deactivation — stop teaching without removing hooks
+  app.post("/session/deactivate", async (_request, reply) => {
+    activeSessionId = null;
+    broadcast({ type: "status", message: "Teaching mode paused" });
+    return reply.status(200).send({ activeSessionId: null });
+  });
+
   // Compact status for StatusLine integration
   app.get("/statusline", async () => {
     const conceptCount = Object.keys(knowledge.concepts).length;

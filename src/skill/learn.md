@@ -7,6 +7,8 @@ description: Start/stop real-time teaching mode with interactive exercises. Use 
 
 You are activating the real-time teaching mode for a non-programmer user.
 
+The PostToolUse hook is already installed globally by `lwb setup`. You do NOT need to modify any settings files.
+
 ## Commands
 
 ### /learn start
@@ -21,7 +23,13 @@ You are activating the real-time teaching mode for a non-programmer user.
    lwb serve &
    ```
 
-3. Detect the terminal and set up the teaching pane:
+3. Activate this session so only its events show in the teaching panel:
+   ```bash
+   curl -s -X POST http://127.0.0.1:3579/session/activate -H 'Content-Type: application/json' -d "{\"session_id\": \"$CLAUDE_SESSION_ID\"}"
+   ```
+   Note: If `$CLAUDE_SESSION_ID` is not available, use any unique identifier for this session.
+
+4. Detect the terminal and set up the teaching pane:
    - If inside tmux (`$TMUX` is set): run `tmux split-window -h "lwb watch"`
    - If inside Ghostty (`$GHOSTTY_RESOURCES_DIR` is set on macOS): the server handles auto-split
    - Otherwise: tell the user:
@@ -30,42 +38,16 @@ You are activating the real-time teaching mode for a non-programmer user.
      > lwb watch
      > ```
 
-4. Register the PostToolUse hook by adding to `.claude/settings.local.json`:
-   ```json
-   {
-     "hooks": {
-       "PostToolUse": [
-         {
-           "hooks": [
-             {
-               "type": "http",
-               "url": "http://127.0.0.1:3579/event",
-               "timeout": 5
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
-
-5. Activate this session so only its events show in the teaching panel:
-   ```bash
-   curl -s -X POST http://127.0.0.1:3579/session/activate -H 'Content-Type: application/json' -d "{\"session_id\": \"$CLAUDE_SESSION_ID\"}"
-   ```
-   Note: If `$CLAUDE_SESSION_ID` is not available, use any unique identifier for this session.
-
-6. Confirm to the user:
+5. Confirm to the user:
    > Teaching mode started! As I code, the right panel will explain each step in real time.
 
 ### /learn stop
 
-1. Remove the PostToolUse hook from `.claude/settings.local.json`
-2. Stop the lwb server:
+1. Tell the server to deactivate teaching:
    ```bash
-   curl -s -X POST http://127.0.0.1:3579/shutdown 2>/dev/null
+   curl -s -X POST http://127.0.0.1:3579/session/deactivate 2>/dev/null
    ```
-3. Confirm: Teaching mode stopped.
+2. Confirm: Teaching mode stopped. (The hook stays installed but does nothing when the server is inactive.)
 
 ### /learn try
 
@@ -97,7 +79,7 @@ Set teaching language (default: auto, which follows user's conversation language
 ```bash
 curl -s -X POST http://127.0.0.1:3579/config -H 'Content-Type: application/json' -d '{"lang": "<language>"}'
 ```
-Examples: `/learn lang zh` (中文), `/learn lang en` (English), `/learn lang auto` (auto-detect)
+Examples: `/learn lang zh`, `/learn lang en`, `/learn lang auto`
 Then confirm the language has been set.
 
 ### /learn status
