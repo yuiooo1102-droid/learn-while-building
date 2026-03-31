@@ -19,6 +19,8 @@ export function buildPrompt(
   recentSteps: ReadonlyArray<SessionStep>,
   depth: 1 | 2 | 3 = 2,
   lang: string = "auto",
+  goal: string = "",
+  projectType: string = "auto",
 ): string {
   // Only include relevant knowledge: weak concepts (level < 3) and recent ones
   // This saves ~500 tokens vs dumping the full 200+ concept list
@@ -67,6 +69,13 @@ export function buildPrompt(
     operationContext = `Tool: ${toolName}\nArgs: ${JSON.stringify(toolInput, null, 2).slice(0, 800)}`;
   }
 
+  const goalSection = goal
+    ? `\nLearning goal: "${goal}". Prioritize concepts that help achieve this goal.`
+    : "";
+  const projectSection = projectType !== "auto"
+    ? `\nProject type: ${projectType}. Prioritize relevant concepts.`
+    : "";
+
   const langInstruction = lang === "auto"
     ? "Use the same language as the user's conversation (infer from context)"
     : `Use ${lang}`;
@@ -103,16 +112,19 @@ ${operationContext}
 
 Recent context steps:
 ${stepsSection}
+${goalSection}${projectSection}
 
 Analyze the code content, identify the programming concepts, and explain them. Output strictly in the following JSON format (no other text):
 {
   "title": "Short title (describing the core programming concept of this step, not the tool operation)",
   "explanation": "Explain the programming concepts in the code using everyday language. E.g. if you see import, explain module imports; async/await, explain asynchronous programming; if/else, explain conditionals. Explain unfamiliar concepts in detail with analogies; briefly mention mastered ones.",
-  "concepts": [{"name": "concept-name-in-english", "label": "Display label", "level": 1}],
+  "concepts": [{"name": "concept-name", "label": "Display label", "level": 1, "domain": "Domain name", "category": "Category name"}],
   "reasoning": "Why the AI chose this particular code approach in this step"
 }
 
 Concept examples (not limited to): variable, function, import, export, async_await, promise, array, object, loop, condition, type_annotation, interface, class, error_handling, callback, template_literal, destructuring, spread_operator, arrow_function, api_call, npm_package, file_io, http_request, json, regex, event_listener
+
+domain and category are REQUIRED for each concept — classify into a high-level domain (e.g. Programming Basics, Web Development, DevOps) and a category within that domain.
 
 ${depthInstructions[depth]}`;
 }
@@ -125,8 +137,10 @@ export async function generateTeaching(
   model: string = "claude-sonnet-4-6",
   depth: 1 | 2 | 3 = 2,
   lang: string = "auto",
+  goal: string = "",
+  projectType: string = "auto",
 ): Promise<TeachingContent> {
-  const prompt = buildPrompt(event, knowledge, recentSteps, depth, lang);
+  const prompt = buildPrompt(event, knowledge, recentSteps, depth, lang, goal, projectType);
 
   const response = await client.messages.create({
     model,

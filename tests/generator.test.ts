@@ -88,6 +88,17 @@ describe("buildPrompt", () => {
     const prompt = buildPrompt(event, { concepts: {} }, [], 3);
     expect(prompt).toContain("400 words");
   });
+
+  it("includes goal and project type in prompt", () => {
+    const event: HookEvent = {
+      session_id: "s1", hook_event_name: "PostToolUse", tool_name: "Write",
+      tool_input: { file_path: "/src/app.ts", content: "const x = 1;" },
+      tool_response: { success: true }, tool_use_id: "t1", cwd: "/project",
+    };
+    const prompt = buildPrompt(event, { concepts: {} }, [], 2, "auto", "Fix bugs", "web-frontend");
+    expect(prompt).toContain("Fix bugs");
+    expect(prompt).toContain("web-frontend");
+  });
 });
 
 describe("generateTeaching", () => {

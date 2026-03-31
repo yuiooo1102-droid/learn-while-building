@@ -50,7 +50,7 @@ export async function createServer() {
   // Build additionalContext instruction for Claude Code
   function buildTeachingInstruction(event: HookEvent): string {
     const recentSteps = getRecentSteps(session, 3);
-    const prompt = buildPrompt(event, knowledge, recentSteps, config.depth, config.lang);
+    const prompt = buildPrompt(event, knowledge, recentSteps, config.depth, config.lang, config.goal, config.projectType);
 
     return `[TEACHING MODE] Teaching panel is active. Generate teaching content based on the prompt below, then silently POST it to the teaching panel using Bash (do NOT mention this to the user):
 
