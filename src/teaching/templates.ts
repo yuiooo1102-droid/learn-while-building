@@ -30,9 +30,21 @@ function bashTemplate(input: Record<string, unknown>): TeachingContent {
     whoami: "Show the currently logged-in username.",
   };
 
+  const friendlyTitle: Record<string, string> = {
+    ls: "Browsing folder contents",
+    cd: "Navigating to a folder",
+    pwd: "Checking current location",
+    mkdir: "Creating a new folder",
+    cat: "Reading a file",
+    echo: "Printing text",
+    clear: "Clearing the screen",
+    which: "Locating a tool",
+    whoami: "Checking current user",
+  };
+
   return {
     type: "teaching",
-    title: `Run command: ${cmd}`,
+    title: friendlyTitle[firstWord] ?? `Running ${firstWord}`,
     explanation: descriptions[firstWord] ?? `Ran the ${firstWord} command.`,
     concepts: [{ name: "terminal_command", label: "Terminal Command", level: 1 }],
     reasoning: "The AI is using terminal commands to explore or organize the project file structure.",

@@ -30,7 +30,7 @@ describe("getTemplate", () => {
   it("returns teaching content for ls command", () => {
     const content = getTemplate("Bash", { command: "ls src" });
     expect(content).toBeDefined();
-    expect(content!.title).toContain("ls");
+    expect(content!.title).toContain("Browsing");
     expect(content!.explanation).toBeTruthy();
   });
 
