@@ -3,3 +3,4 @@ dist/
 # Dev files
 prescore-*.md
 docs/superpowers/
+.DS_Store
