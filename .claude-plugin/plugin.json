@@ -1,0 +1,10 @@
+{
+  "name": "learn",
+  "description": "Real-time teaching companion — learn programming while AI builds your project",
+  "version": "0.5.0",
+  "author": {
+    "name": "wh"
+  },
+  "license": "MIT",
+  "keywords": ["teaching", "learning", "real-time", "beginner"]
+}
