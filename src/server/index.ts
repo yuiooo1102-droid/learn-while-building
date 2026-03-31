@@ -23,7 +23,8 @@ const KNOWLEDGE_PATH = join(LWB_DIR, "knowledge.json");
 const CONFIG_PATH = join(LWB_DIR, "config.json");
 const ARCHIVE_PATH = join(LWB_DIR, "archive.jsonl");
 const CONCEPT_MAP_PATH = join(LWB_DIR, "concept-map.json");
-const PORT = 3579;
+const DEFAULT_PORT = 3579;
+const PORT = Number(process.env.LWB_PORT) || DEFAULT_PORT;
 
 export async function createServer() {
   const app = Fastify({ logger: false });
