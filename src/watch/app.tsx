@@ -16,6 +16,20 @@ type AgentHistory = {
   readonly label: string;
 };
 
+const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+function useSpinner(active: boolean): string {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const timer = setInterval(() => {
+      setFrame(prev => (prev + 1) % SPINNER_FRAMES.length);
+    }, 80);
+    return () => clearInterval(timer);
+  }, [active]);
+  return SPINNER_FRAMES[frame];
+}
+
 export default function App({ port }: Props) {
   const [connected, setConnected] = useState(false);
   const [appState, setAppState] = useState<AppState>("teaching");
@@ -30,6 +44,7 @@ export default function App({ port }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
+  const spinner = useSpinner(loading !== null);
 
   const agentIds = useMemo(() => Object.keys(agentHistories), [agentHistories]);
   const activeHistory = agentHistories[activeAgentId]?.items ?? [];
@@ -153,10 +168,10 @@ export default function App({ port }: Props) {
         </Box>
       )}
 
-      {/* Loading overlay — show on top of previous content */}
+      {/* Loading overlay — spinner on top of previous content */}
       {loading && (
         <Box paddingX={1} marginBottom={1}>
-          <Text color="yellow">{"⏳ "}{loading}</Text>
+          <Text color="yellow">{spinner} {loading}</Text>
         </Box>
       )}
 

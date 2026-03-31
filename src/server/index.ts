@@ -8,6 +8,7 @@ import { hasTemplate, getTemplate } from "../teaching/templates.js";
 import { buildPrompt } from "../teaching/generator.js";
 import { loadKnowledge, saveKnowledge, updateConcept } from "../teaching/knowledge.js";
 import { loadConfig, saveConfig } from "../teaching/config.js";
+import { appendArchive } from "../teaching/archive.js";
 import { createSession, addStep, getRecentSteps } from "../teaching/session.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -15,6 +16,7 @@ import { join } from "node:path";
 const LWB_DIR = join(homedir(), ".learn-while-building");
 const KNOWLEDGE_PATH = join(LWB_DIR, "knowledge.json");
 const CONFIG_PATH = join(LWB_DIR, "config.json");
+const ARCHIVE_PATH = join(LWB_DIR, "archive.jsonl");
 const PORT = 3579;
 
 export async function createServer() {
@@ -141,6 +143,16 @@ curl -s -X POST http://127.0.0.1:${PORT}/teach -H 'Content-Type: application/jso
       };
 
       broadcast(content);
+
+      // Archive teaching content for offline review
+      appendArchive(ARCHIVE_PATH, {
+        timestamp: new Date().toISOString(),
+        project: lastEvent?.cwd ?? "",
+        concepts: content.concepts.map(c => c.name),
+        title: content.title,
+        explanation: content.explanation,
+        reasoning: content.reasoning,
+      }).catch(() => {});
 
       for (const concept of content.concepts) {
         knowledge = updateConcept(knowledge, concept.name, concept.level);
