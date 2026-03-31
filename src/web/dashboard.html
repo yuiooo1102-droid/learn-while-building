@@ -629,7 +629,7 @@ footer {
   <div class="footer-status">
     <span id="footerStatus">Connecting...</span>
   </div>
-  <div id="footerVersion">v0.3</div>
+  <div id="footerVersion">v0.4</div>
 </footer>
 
 <script>
@@ -682,13 +682,13 @@ function addTeachingCard(content) {
     <div class="card-body">${esc(content.explanation)}</div>
     ${content.reasoning ? `<div class="card-reasoning">${esc(content.reasoning)}</div>` : ''}
     ${concepts ? `<div class="card-concepts">${concepts}</div>` : ''}
-    <div class="card-time">${new Date().toLocaleTimeString()}</div>
+    <div class="card-time" data-time="${Date.now()}">${timeAgo(new Date())}</div>
   `;
   const feed = document.getElementById('feed');
   feed.prepend(card);
   // Keep max 50 cards
   while (feed.children.length > 50) feed.lastChild.remove();
-  updateStatsFromFeed(content);
+  refreshStatsAndTree();
 }
 
 function addExerciseCard(ex) {
@@ -901,12 +901,13 @@ function updateStats(knowledge) {
   document.getElementById('statMastered').textContent = mastered.length;
 }
 
-function updateStatsFromFeed(content) {
-  // Lightweight: just increment displayed count
-  const el = document.getElementById('statConcepts');
-  const current = parseInt(el.textContent) || 0;
-  const newConcepts = (content.concepts || []).length;
-  if (newConcepts > 0) el.textContent = current + newConcepts;
+async function refreshStatsAndTree() {
+  try {
+    const kRes = await fetch('/api/knowledge');
+    const knowledge = await kRes.json();
+    updateStats(knowledge);
+    await loadTree();
+  } catch {}
 }
 
 async function checkClassifyNeeded() {
@@ -945,11 +946,26 @@ async function loadInitialData() {
 
 // ═══ Helpers ═══
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function timeAgo(date) {
+  const s = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return date.toLocaleDateString();
+}
 function levelLabel(l) { return ['New', 'Seen', 'Understood', 'Mastered'][l] || 'New'; }
 function levelColor(l) { return [getComputedStyle(document.documentElement).getPropertyValue('--gray').trim(), 'var(--yellow)', 'var(--blue)', 'var(--green)'][l] || 'var(--gray)'; }
 function progressColor(p) { return p >= 75 ? 'var(--green)' : p >= 40 ? 'var(--yellow)' : 'var(--accent-dim)'; }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// Update relative timestamps every 30s
+setInterval(() => {
+  document.querySelectorAll('.card-time[data-time]').forEach(el => {
+    el.textContent = timeAgo(new Date(Number(el.dataset.time)));
+  });
+}, 30000);
+
 connect();
 </script>
 </body>
