@@ -3,6 +3,8 @@ import { Box, Text } from "ink";
 import TextInput from "ink-text-input";
 import type { Exercise, ExerciseFeedback } from "../types.js";
 
+const SEP = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
+
 type ExerciseProps = {
   readonly exercise: Exercise;
   readonly inputValue: string;
@@ -13,9 +15,9 @@ type ExerciseProps = {
 export function ExerciseView({ exercise, inputValue, onInputChange, onSubmit }: ExerciseProps) {
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box><Text bold color="yellow">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="yellow">{SEP}</Text></Box>
       <Box><Text bold>🎯 Try it!</Text></Box>
-      <Box><Text bold color="yellow">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="yellow">{SEP}</Text></Box>
 
       <Box flexDirection="column" marginTop={1}>
         <Text>{exercise.question}</Text>
@@ -38,7 +40,8 @@ export function ExerciseView({ exercise, inputValue, onInputChange, onSubmit }: 
         <TextInput value={inputValue} onChange={onInputChange} onSubmit={onSubmit} />
       </Box>
 
-      <Box marginTop={1}><Text bold color="yellow">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box marginTop={1}><Text color="gray">Enter answer | skip to skip</Text></Box>
+      <Box><Text bold color="yellow">{SEP}</Text></Box>
     </Box>
   );
 }
@@ -48,17 +51,18 @@ type FeedbackProps = {
 };
 
 export function FeedbackView({ feedback }: FeedbackProps) {
+  const color = feedback.correct ? "green" : "red";
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box><Text bold color={feedback.correct ? "green" : "red"}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color={color}>{SEP}</Text></Box>
       <Box><Text bold>{feedback.correct ? "✅ Correct!" : "❌ Not quite"}</Text></Box>
-      <Box><Text bold color={feedback.correct ? "green" : "red"}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color={color}>{SEP}</Text></Box>
 
       <Box flexDirection="column" marginTop={1}>
         <Text>{feedback.explanation}</Text>
       </Box>
 
-      <Box marginTop={1}><Text bold color={feedback.correct ? "green" : "red"}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box marginTop={1}><Text bold color={color}>{SEP}</Text></Box>
     </Box>
   );
 }

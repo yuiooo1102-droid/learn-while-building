@@ -10,6 +10,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const LWB_DIR = join(homedir(), ".learn-while-building");
+const SEP = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
 type ReviewState = "tree" | "detail";
 
@@ -54,8 +55,11 @@ export default function ReviewApp() {
       ? <TreeView tree={tree} onDismiss={() => process.exit(0)} onSelectConcept={handleSelectConcept} />
       : (
         <Box flexDirection="column" paddingX={1}>
-          <Text bold>📚 Review Mode</Text>
-          <Text color="gray">No learning records yet. Start with /learn start.</Text>
+          <Box><Text bold color="cyan">{SEP}</Text></Box>
+          <Box><Text bold>📚 Review Mode</Text></Box>
+          <Box><Text bold color="cyan">{SEP}</Text></Box>
+          <Box marginTop={1}><Text color="gray">No learning records yet. Start with /learn start.</Text></Box>
+          <Box marginTop={1}><Text bold color="cyan">{SEP}</Text></Box>
         </Box>
       );
   }
@@ -65,12 +69,13 @@ export default function ReviewApp() {
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
       <Box justifyContent="space-between">
         <Text bold>📖 {selectedConcept}</Text>
         <Text color="gray">{filtered.length > 0 ? `${detailIndex + 1} / ${filtered.length}` : "0 / 0"}</Text>
       </Box>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
+
       {entry ? (
         <Box flexDirection="column" marginTop={1}>
           <Text bold>{entry.title}</Text>
@@ -81,8 +86,9 @@ export default function ReviewApp() {
       ) : (
         <Box marginTop={1}><Text color="gray">No records for this concept</Text></Box>
       )}
+
       <Box marginTop={1}><Text color="gray">↑↓ navigate | q back to tree</Text></Box>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
     </Box>
   );
 }

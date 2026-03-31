@@ -4,6 +4,9 @@ import type { SkillTreeNode, ConceptLevel } from "../types.js";
 
 const LEVEL_COLORS: Record<ConceptLevel, string> = { 0: "gray", 1: "yellow", 2: "blue", 3: "green" };
 const LEVEL_ICONS: Record<ConceptLevel, string> = { 0: "○", 1: "◔", 2: "◑", 3: "●" };
+const LEVEL_LABELS: Record<ConceptLevel, string> = { 0: "New", 1: "Seen", 2: "Understood", 3: "Mastered" };
+
+const SEP = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━";
 
 function ProgressBar({ progress, width = 20 }: { progress: number; width?: number }) {
   const filled = Math.round((progress / 100) * width);
@@ -63,18 +66,22 @@ export default function TreeView({ tree, onDismiss, onSelectConcept }: Props) {
   if (tree.length === 0) {
     return (
       <Box flexDirection="column" paddingX={1}>
-        <Text bold>🌳 Skill Tree</Text>
-        <Text color="gray">No concepts mapped yet. Keep learning!</Text>
-        <Text color="gray">Press q to return</Text>
+        <Box><Text bold color="cyan">{SEP}</Text></Box>
+        <Box><Text bold>🌳 Skill Tree</Text></Box>
+        <Box><Text bold color="cyan">{SEP}</Text></Box>
+        <Box marginTop={1}><Text color="gray">No concepts mapped yet. Keep learning!</Text></Box>
+        <Box marginTop={1}><Text color="gray">Press q to return</Text></Box>
+        <Box marginTop={1}><Text color="gray">q return</Text></Box>
+        <Box><Text bold color="cyan">{SEP}</Text></Box>
       </Box>
     );
   }
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
       <Box><Text bold>🌳 Skill Tree</Text></Box>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
 
       {tree.map((domain, di) => (
         <Box key={domain.name} flexDirection="column" marginTop={di === 0 ? 1 : 0}>
@@ -97,7 +104,7 @@ export default function TreeView({ tree, onDismiss, onSelectConcept }: Props) {
                 <Box paddingLeft={4} flexDirection="column">
                   {category.concepts.map(c => (
                     <Text key={c.name} color={LEVEL_COLORS[c.level]}>
-                      {"  "}{LEVEL_ICONS[c.level]} {c.name} ({c.encounters}x)
+                      {"  "}{LEVEL_ICONS[c.level]} {c.name} — {LEVEL_LABELS[c.level]} ({c.encounters}x)
                     </Text>
                   ))}
                 </Box>
@@ -107,10 +114,8 @@ export default function TreeView({ tree, onDismiss, onSelectConcept }: Props) {
         </Box>
       ))}
 
-      <Box marginTop={1}>
-        <Text color="gray">↑↓ navigate | Enter drill-down | q return</Text>
-      </Box>
-      <Box><Text bold color="cyan">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text></Box>
+      <Box marginTop={1}><Text color="gray">↑↓ navigate | Enter drill-down | q return</Text></Box>
+      <Box><Text bold color="cyan">{SEP}</Text></Box>
     </Box>
   );
 }
